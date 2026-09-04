@@ -1,0 +1,2450 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>sz_nutrition - יומן תזונה ומאקרו ניטרלי</title>
+    <!-- טעינת ספרית גרפים Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #121814;
+            --card-bg: #1c261e;
+            --primary-color: #4caf50;
+            --secondary-color: #81c784;
+            --accent-green: #27382b;
+            --accent-dark: #1b241e;
+            --text-color: #e8f5e9;
+            --border-radius: 16px;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            margin-bottom: 20px;
+            border: 1px solid #2d3f31;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* כותרות ואלמנטים אסתטיים */
+        h1, h2, h3 {
+            text-align: center;
+            color: #81c784;
+            margin-top: 0;
+        }
+        h1 { font-size: 1.4em; margin-bottom: 10px; }
+        h2 { font-size: 1.2em; margin-bottom: 12px; margin-top: 20px; }
+        h3 { font-size: 1.05em; margin-bottom: 10px; margin-top: 15px; color: #a5d6a7; text-align: right; }
+
+        .aesthetic-header-bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+        }
+
+        /* סרגל מעבר בין תאריכים וימים עם חצים */
+        .date-navigator-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #233327;
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid #364d3b;
+            margin-bottom: 15px;
+        }
+        .date-nav-btn {
+            background: #1c261e;
+            color: #81c784;
+            border: 1px solid #364d3b;
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .date-nav-btn:hover {
+            background: #4caf50;
+            color: white;
+        }
+        .date-display-info {
+            text-align: center;
+        }
+        .date-display-title {
+            font-size: 0.95em;
+            font-weight: bold;
+            color: #81c784;
+        }
+        .date-display-subtitle {
+            font-size: 0.7em;
+            color: #a3b8a5;
+        }
+
+        /* סרגל מעבר בין ימי השבוע הקלאסי */
+        .days-nav-bar {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            margin-bottom: 15px;
+            background: #233327;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid #364d3b;
+        }
+        .day-tab {
+            flex: 1;
+            padding: 6px 2px;
+            border: none;
+            background: #1c261e;
+            color: #81c784;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.75em;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .day-tab.active {
+            background: linear-gradient(135deg, #4caf50, #81c784);
+            color: #121814;
+            box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
+        }
+
+        /* אזור הדאשבורד העליון */
+        .dashboard {
+            background: linear-gradient(135deg, #1c2a1f 0%, #17221a 100%);
+            border: 1px solid #364d3b;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: background 0.3s;
+        }
+
+        /* עיגול קלוריות ראשי עם אפקט נצנצים ניטרליים */
+        .chart-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            padding: 10px;
+            background: radial-gradient(circle, rgba(35,51,39,1) 0%, rgba(18,24,20,1) 100%);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.15);
+            animation: greenSparkleBorder 3s ease infinite;
+        }
+
+        @keyframes greenSparkleBorder {
+            0% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.3), inset 0 0 10px rgba(76, 175, 80, 0.2); border-color: rgba(76, 175, 80, 0.4); }
+            50% { box-shadow: 0 0 22px rgba(76, 175, 80, 0.8), inset 0 0 15px rgba(76, 175, 80, 0.5); border-color: rgba(129, 199, 132, 0.9); }
+            100% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.3), inset 0 0 10px rgba(76, 175, 80, 0.2); border-color: rgba(76, 175, 80, 0.4); }
+        }
+
+        .chart-container::before {
+            content: "✨ ⭐ 🌟";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            animation: greenTextSparkle 2s ease infinite;
+            letter-spacing: 4px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes greenTextSparkle {
+            0% { opacity: 0.4; text-shadow: 0 0 4px #a5d6a7; }
+            50% { opacity: 1; text-shadow: 0 0 12px #a5d6a7, 0 0 20px #81c784; transform: translateX(-50%) scale(1.1); }
+            100% { opacity: 0.4; text-shadow: 0 0 4px #a5d6a7; }
+        }
+
+        .chart-labels {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+            z-index: 2;
+        }
+        .chart-labels .calories-consumed { font-size: 1.8em; font-weight: bold; color: #4caf50; line-height: 1.1; }
+        .chart-labels .calories-target { font-size: 0.8em; color: #a3b8a5; margin-bottom: 2px; }
+
+        /* רכיב אחוזי מאקרו תרמו-דינמי מדויק */
+        .macros-percentage-card {
+            width: 100%;
+            background: #1c261e;
+            border: 1px solid #364d3b;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            text-align: right;
+        }
+        .macros-percentage-header {
+            font-size: 0.8em;
+            color: #81c784;
+            font-weight: bold;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .macros-bar-container {
+            display: flex;
+            height: 10px;
+            width: 100%;
+            border-radius: 5px;
+            overflow: hidden;
+            background: #121814;
+            margin-bottom: 8px;
+            border: 1px solid #2d3f31;
+        }
+        .macro-segment {
+            height: 100%;
+            transition: width 0.4s ease;
+        }
+        .macros-legend-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            font-size: 0.72em;
+            text-align: center;
+        }
+        .macro-legend-item {
+            background: #121814;
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid #2d3f31;
+        }
+
+        /* בחירת יעד אחוזים מובנה */
+        .macro-target-picker {
+            background: #121814;
+            border: 1px solid #2d3f31;
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 0.78em;
+            text-align: right;
+        }
+        .macro-target-picker select {
+            background: #1c261e;
+            color: #e8f5e9;
+            border: 1px solid #364d3b;
+            padding: 4px;
+            border-radius: 6px;
+            font-size: 1em;
+            width: 100%;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        /* רכיב טווח קלורי */
+        .calorie-range-widget {
+            width: 100%;
+            background: rgba(18, 24, 20, 0.85);
+            border: 1px solid #364d3b;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .calorie-range-header {
+            font-size: 0.8em;
+            color: #81c784;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dual-range-container {
+            position: relative;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            margin: 0 5px;
+        }
+        .dual-range-track {
+            position: absolute;
+            left: 0; right: 0;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(270deg, #4caf50, #81c784, #c8e6c9, #2e7d32, #4caf50);
+            background-size: 400% 400%;
+            animation: rangeSparkleAnim 4s ease infinite;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5), 0 0 15px rgba(200, 230, 201, 0.4);
+        }
+        @keyframes rangeSparkleAnim {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .dual-range-input {
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background: none;
+            pointer-events: none;
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+        .dual-range-input::-webkit-slider-thumb {
+            pointer-events: auto;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #4caf50;
+            box-shadow: 0 0 8px #a5d6a7, 0 0 12px #4caf50;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .dual-range-input::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        .dual-range-input::-moz-range-thumb {
+            pointer-events: auto;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #4caf50;
+            box-shadow: 0 0 8px #a5d6a7, 0 0 12px #4caf50;
+            cursor: pointer;
+        }
+
+        /* מבנה סיכום תזונה מעוצב בעמודות */
+        .nutrition-summary-card {
+            background: #1c261e;
+            border: 1px solid #364d3b;
+            border-radius: var(--border-radius);
+            padding: 12px;
+            margin-bottom: 5px;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .nutrition-summary-title {
+            text-align: left;
+            color: #a3b8a5;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .nutrition-columns {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+        .nutrition-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-left: 1px solid #2d3f31;
+            padding-left: 2px;
+        }
+        .nutrition-col:first-child { border-left: none; }
+        .nutrition-col-header {
+            text-align: center;
+            margin-bottom: 6px;
+        }
+        .nutrition-col-icon { font-size: 1.2em; }
+        .nutrition-col-name { font-size: 0.75em; font-weight: bold; color: #c8e6c9; margin-top: 2px; }
+        .nutrition-col-count { font-size: 0.7em; color: #81c784; font-weight: bold; margin-bottom: 4px; }
+        
+        .nutrition-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        
+        .nutrition-item-box {
+            border: 1px solid #4caf50;
+            border-radius: 6px;
+            padding: 4px 2px;
+            text-align: center;
+            background: #121814;
+            font-size: 0.7em;
+            transition: all 0.3s ease;
+        }
+        .nutrition-col:nth-child(1) .nutrition-item-box { border-color: #4caf50; }
+        .nutrition-col:nth-child(2) .nutrition-item-box { border-color: #81c784; }
+        .nutrition-col:nth-child(3) .nutrition-item-box { border-color: #a5d6a7; }
+        .nutrition-col:nth-child(4) .nutrition-item-box { border-color: #c8e6c9; }
+
+        .nutrition-item-box.sparkle {
+            background: linear-gradient(135deg, #1b3021, #243827, #1e3322, #16291b);
+            background-size: 300% 300%;
+            animation: sparkleAnim 2.5s ease infinite;
+            border-color: #81c784;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+        }
+
+        @keyframes sparkleAnim {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .nutrition-item-name { color: #e8f5e9; font-weight: 600; line-height: 1.1; }
+        .nutrition-item-amount { color: #a3b8a5; font-size: 0.65em; margin-top: 1px; }
+
+        /* תיבת תובנות AI מעוצבת עם נצנצים ומתקפלת */
+        .ai-insight-box {
+            background: linear-gradient(135deg, #1b3021 0%, #17291d 100%);
+            background-size: 300% 300%;
+            animation: sparkleAnim 4s ease infinite;
+            border: 1px solid #36533c;
+            border-radius: var(--border-radius);
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            color: #81c784;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        .ai-insight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .ai-insight-title {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #81c784;
+        }
+        .ai-toggle-arrow {
+            font-size: 1.1em;
+            transition: transform 0.3s ease;
+            color: #81c784;
+        }
+        .ai-insight-content {
+            margin-top: 10px;
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+            opacity: 1;
+        }
+        .ai-insight-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+        .ai-insight-header.collapsed .ai-toggle-arrow {
+            transform: rotate(180deg);
+        }
+
+        .card {
+            background-color: #1c261e;
+            border: 1px solid #2d3f31;
+            border-radius: var(--border-radius);
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .form-group label { font-size: 0.85em; font-weight: bold; color: #c8e6c9; }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 6px 8px;
+            border: 1px solid #364d3b;
+            border-radius: 8px;
+            width: 130px;
+            text-align: center;
+            font-size: 0.9em;
+            background-color: #121814;
+            color: #e8f5e9;
+        }
+
+        details {
+            background-color: #1c261e;
+            border: 1px solid #2d3f31;
+            border-radius: var(--border-radius);
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        summary { font-weight: bold; color: #4caf50; cursor: pointer; outline: none; margin-bottom: 8px; }
+        details[open] summary { margin-bottom: 15px; }
+
+        .search-box {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 2px solid #364d3b;
+            border-radius: 10px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            background-color: #121814;
+            color: #e8f5e9;
+        }
+        .results-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 15px 0;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .result-item {
+            background: #121814;
+            border: 1px solid #2d3f31;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+        .result-item:hover { background: #233327; }
+
+        .guide-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 0.8em;
+            background: #121814;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #2d3f31;
+        }
+        .guide-table th, .guide-table td {
+            padding: 7px 8px;
+            text-align: right;
+            border-bottom: 1px solid #2d3f31;
+            color: #e8f5e9;
+            transition: all 0.3s ease;
+        }
+        .guide-table th {
+            background: #233327;
+            color: #81c784;
+            font-weight: bold;
+        }
+        .guide-table tr:hover td {
+            background: linear-gradient(135deg, #1b3021, #243827, #1e3322);
+            background-size: 200% 200%;
+            animation: tableRowSparkle 1.8s ease infinite;
+            color: #c8e6c9;
+            text-shadow: 0 0 8px rgba(129, 199, 132, 0.6), 0 0 12px rgba(76, 175, 80, 0.8);
+            border-bottom-color: #81c784;
+        }
+        .guide-table tr:hover td::after {
+            content: " ⭐✨";
+        }
+        .guide-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        @keyframes tableRowSparkle {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .portion-list { display: flex; flex-direction: column; gap: 8px; }
+        .portion-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #2d3f31;
+            border-radius: var(--border-radius);
+            background: #1c261e;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .portion-item:hover {
+            background: linear-gradient(135deg, #1b3021, #243827, #1e3322);
+            background-size: 200% 200%;
+            animation: tableRowSparkle 1.8s ease infinite;
+            border-color: #81c784;
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.5);
+        }
+        .portion-item:hover .portion-title {
+            color: #c8e6c9;
+            text-shadow: 0 0 8px rgba(129, 199, 132, 0.6);
+        }
+        .portion-item:hover .portion-title::after {
+            content: " 🍃✨";
+        }
+
+        .portion-main { display: flex; align-items: center; gap: 10px; max-width: 70%; }
+        .portion-icon { font-size: 1.5em; }
+        .portion-info { display: flex; flex-direction: column; }
+        .portion-title { font-weight: bold; font-size: 0.95em; color: #c8e6c9; transition: color 0.3s; }
+        .portion-sub { font-size: 0.75em; color: #a3b8a5; line-height: 1.2; }
+
+        .controls { display: flex; align-items: center; gap: 6px; }
+        .btn-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
+        }
+        .btn-circle:disabled { background: #333f35; box-shadow: none; cursor: not-allowed; color: #757575; }
+        .count { font-weight: bold; width: 36px; text-align: center; font-size: 0.9em; color: #4caf50; }
+
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4caf50, #81c784);
+            color: #121814;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+            font-size: 0.95em;
+            cursor: pointer;
+            margin-top: 5px;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
+        }
+
+        .section-divider { border-top: 2px dashed #364d3b; margin-top: 30px; padding-top: 15px; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #121814;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border-right: 4px solid #4caf50;
+            font-size: 0.85em;
+            border-top: 1px solid #2d3f31;
+            border-bottom: 1px solid #2d3f31;
+            border-left: 1px solid #2d3f31;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 20px;
+            flex-wrap: nowrap;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 6px 1px;
+            border: 1px solid #364d3b;
+            background: #121814;
+            color: #81c784;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.65em;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #4caf50, #81c784);
+            color: #121814;
+            border-color: transparent;
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+        }
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+
+        .weekly-average-card {
+            background: linear-gradient(135deg, #1c261e 0%, #233327 100%);
+            border: 1px solid #4caf50;
+            border-radius: var(--border-radius);
+            padding: 12px 15px;
+            margin-top: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+        }
+
+        .app-footer-logo {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px dashed #2d3f31;
+            display: flex;
+            justify-content: center;
+        }
+
+        .real-logo-svg-wrapper {
+            width: 105px;
+            height: 105px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #121814;
+            border: 2px solid #4caf50;
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .sparkle-green-logo {
+            animation: logoGreenSparkle 1.8s ease-in-out infinite;
+        }
+        @keyframes logoGreenSparkle {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 8px #c8e6c9, 0 0 15px #4caf50;
+                border-color: #c8e6c9;
+            }
+            50% {
+                transform: scale(1.12);
+                box-shadow: 0 0 25px #c8e6c9, 0 0 45px #4caf50, inset 0 0 12px #fff;
+                border-color: #e8f5e9;
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 8px #c8e6c9, 0 0 15px #4caf50;
+                border-color: #c8e6c9;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div>
+        <div class="aesthetic-header-bar">
+            <span>✨</span><span>⭐</span><span>🌟</span><span>🍃</span><span>🥗</span>
+        </div>
+        <h1>sz_nutrition</h1>
+
+        <!-- תפריט מעבר עמודים (ללא לשונית מחזור) -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchPage('tracker')">🥗 יומן</button>
+            <button class="tab-btn" onclick="switchPage('clean-tracker')">🎯 סימון</button>
+            <button class="tab-btn" onclick="switchPage('nutrition-guide')">📖 מנות</button>
+            <button class="tab-btn" onclick="switchPage('workouts')">💪 אימונים</button>
+            <button class="tab-btn" onclick="switchPage('tdee-calc')">🧮 TDEE</button>
+            <button class="tab-btn" onclick="switchPage('progress-ai')">📈 AI</button>
+        </div>
+
+        <!-- עמוד 1: יומן תזונה -->
+        <div id="page-tracker" class="page-section active">
+            
+            <!-- סרגל מעבר תאריכים וימים עם חצים -->
+            <div class="date-navigator-bar">
+                <button class="date-nav-btn" onclick="navigateDay(-1)">▶</button>
+                <div class="date-display-info">
+                    <div class="date-display-title" id="current-day-title">יום ראשון</div>
+                    <div class="date-display-subtitle" id="current-date-subtitle">--/--/----</div>
+                </div>
+                <button class="date-nav-btn" onclick="navigateDay(1)">◀</button>
+            </div>
+
+            <div class="days-nav-bar" id="daysNavContainer">
+                <button class="day-tab active" onclick="switchActiveDay('ראשון')">ראשון</button>
+                <button class="day-tab" onclick="switchActiveDay('שני')">שני</button>
+                <button class="day-tab" onclick="switchActiveDay('שלישי')">שלישי</button>
+                <button class="day-tab" onclick="switchActiveDay('רביעי')">רביעי</button>
+                <button class="day-tab" onclick="switchActiveDay('חמישי')">חמישי</button>
+                <button class="day-tab" onclick="switchActiveDay('שישי')">שישי</button>
+                <button class="day-tab" onclick="switchActiveDay('שבת')">שבת</button>
+            </div>
+
+            <div id="ai-insight-box" class="ai-insight-box">
+                <div class="ai-insight-header" onclick="toggleAiBox(this)">
+                    <div class="ai-insight-title">⭐✨ תובנות AI</div>
+                    <span class="ai-toggle-arrow">▲</span>
+                </div>
+                <div id="ai-insight-content" class="ai-insight-content">
+                    <div id="ai-insight-text">טוען נתונים...</div>
+                </div>
+            </div>
+
+            <div class="dashboard" id="mainDashboardCard">
+                <div class="chart-container">
+                    <canvas id="caloriesChart"></canvas>
+                    <div class="chart-labels">
+                        <div class="calories-consumed" id="total-calories">0</div>
+                        <div class="calories-target">מתוך <span id="target-calories">1500</span> קל'</div>
+                    </div>
+                </div>
+
+                <!-- רכיב אחוזי מאקרו תרמו-דינמי מדויק ויעד אחוזים לבחירה -->
+                <div class="macros-percentage-card">
+                    <div class="macros-percentage-header">
+                        <span>📊 התפלגות קלוריות מאקרו (4 קל' חלבון/פחמימה, 9 קל' שומן)</span>
+                    </div>
+
+                    <!-- בחירת פרופיל התפלגות אחוזים -->
+                    <div class="macro-target-picker">
+                        <label for="macro-preset-select" style="color: #81c784; font-weight: bold;">בחר יעד אחוזי מאקרו:</label>
+                        <select id="macro-preset-select" onchange="applyMacroPreset()">
+                            <option value="balanced">מאוזן (30% חלבון, 40% פחמימה, 30% שומן)</option>
+                            <option value="highprotein" selected>גבוה חלבון (35% חלבון, 35% פחמימה, 30% שומן)</option>
+                            <option value="lowcarb">דל פחמימה (40% חלבון, 20% פחמימה, 40% שומן)</option>
+                            <option value="custom">התאמה אישית חופשית...</option>
+                        </select>
+                        <div id="custom-macro-inputs" style="display: none; margin-top: 6px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; text-align: center;">
+                            <div><span style="font-size:0.65em; color:#4caf50;">חלבון%</span><input type="number" id="custom-p-pct" value="35" onchange="updateCustomMacroPct()" style="width:100%; font-size:0.8em; padding:2px; background:#121814; color:#fff; border:1px solid #364d3b; border-radius:4px; text-align:center;"></div>
+                            <div><span style="font-size:0.65em; color:#81c784;">פחמימה%</span><input type="number" id="custom-c-pct" value="35" onchange="updateCustomMacroPct()" style="width:100%; font-size:0.8em; padding:2px; background:#121814; color:#fff; border:1px solid #364d3b; border-radius:4px; text-align:center;"></div>
+                            <div><span style="font-size:0.65em; color:#c8e6c9;">שומן%</span><input type="number" id="custom-f-pct" value="30" onchange="updateCustomMacroPct()" style="width:100%; font-size:0.8em; padding:2px; background:#121814; color:#fff; border:1px solid #364d3b; border-radius:4px; text-align:center;"></div>
+                        </div>
+                    </div>
+
+                    <div class="macros-bar-container">
+                        <div id="macro-bar-protein" class="macro-segment" style="width: 0%; background-color: #4caf50;" title="חלבון"></div>
+                        <div id="macro-bar-carbs" class="macro-segment" style="width: 0%; background-color: #81c784;" title="פחמימה"></div>
+                        <div id="macro-bar-fat" class="macro-segment" style="width: 0%; background-color: #c8e6c9;" title="שומן"></div>
+                    </div>
+                    <div class="macros-legend-grid">
+                        <div class="macro-legend-item">
+                            <span style="color: #4caf50; font-weight: bold;">חלבון:</span> <span id="macro-pct-protein">0%</span> (<span id="macro-gram-protein">0g</span>)
+                        </div>
+                        <div class="macro-legend-item">
+                            <span style="color: #81c784; font-weight: bold;">פחמימה:</span> <span id="macro-pct-carbs">0%</span> (<span id="macro-gram-carbs">0g</span>)
+                        </div>
+                        <div class="macro-legend-item">
+                            <span style="color: #c8e6c9; font-weight: bold;">שומן:</span> <span id="macro-pct-fat">0%</span> (<span id="macro-gram-fat">0g</span>)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- רכיב טווח קלורי -->
+                <div class="calorie-range-widget">
+                    <div class="calorie-range-header">
+                        <span>✨ טווח קלורי מבוקש ✨</span>
+                        <span style="color: #a5d6a7;"><span id="range-min-val">1300</span> - <span id="range-max-val">1700</span> קל'</span>
+                    </div>
+                    <div class="dual-range-container">
+                        <div class="dual-range-track"></div>
+                        <input type="range" id="calorie-range-min" class="dual-range-input" min="800" max="2500" step="50" value="1300" oninput="updateDualRange()">
+                        <input type="range" id="calorie-range-max" class="dual-range-input" min="800" max="2500" step="50" value="1700" oninput="updateDualRange()">
+                    </div>
+                </div>
+
+                <div class="nutrition-summary-card">
+                    <div class="nutrition-summary-title">סיכום תזונה 🍃</div>
+                    <div class="nutrition-columns">
+                        <div class="nutrition-col">
+                            <div class="nutrition-col-header">
+                                <div class="nutrition-col-icon">🍗</div>
+                                <div class="nutrition-col-name">חלבונים</div>
+                                <div class="nutrition-col-count" id="summary-protein-ratio">0 מנות</div>
+                            </div>
+                            <div class="nutrition-items-list" id="protein-items-list"></div>
+                        </div>
+                        <div class="nutrition-col">
+                            <div class="nutrition-col-header">
+                                <div class="nutrition-col-icon">🥖</div>
+                                <div class="nutrition-col-name">פחמימות</div>
+                                <div class="nutrition-col-count" id="summary-carb-ratio">0 מנות</div>
+                            </div>
+                            <div class="nutrition-items-list" id="carb-items-list"></div>
+                        </div>
+                        <div class="nutrition-col">
+                            <div class="nutrition-col-header">
+                                <div class="nutrition-col-icon">🥑</div>
+                                <div class="nutrition-col-name">שומנים</div>
+                                <div class="nutrition-col-count" id="summary-fat-ratio">0 מנות</div>
+                            </div>
+                            <div class="nutrition-items-list" id="fat-items-list"></div>
+                        </div>
+                        <div class="nutrition-col">
+                            <div class="nutrition-col-header">
+                                <div class="nutrition-col-icon">🍦</div>
+                                <div class="nutrition-col-name">חופשי</div>
+                                <div class="nutrition-col-count" id="summary-free-ratio">0 מנות</div>
+                            </div>
+                            <div class="nutrition-items-list" id="free-items-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- כרטיס חישוב Net Average שמבוסס אך ורק על הימים שהוזנו בפועל -->
+            <div class="weekly-average-card">
+                <div style="font-size: 0.8em; color: #81c784; font-weight: bold; margin-bottom: 4px;">📊 Net Average (ממוצע לפי הימים שהוזנו)</div>
+                <div style="font-size: 1.15em; font-weight: bold; color: #e8f5e9;" id="weekly-avg-calories-display">0 קלוריות בממוצע ליום</div>
+            </div>
+
+            <details open style="margin-top: 15px;">
+                <summary>⚙️ הגדרות יעד, סוג יום והמלצת AI אישית</summary>
+                <div class="form-group">
+                    <label for="day-type">סוג יום:</label>
+                    <select id="day-type" onchange="updateGoal()">
+                        <option value="low">יום נמוך</option>
+                        <option value="high">יום גבוה</option>
+                        <option value="custom">בחירה אישית (הקלדה חופשית)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="custom-calorie-group" style="display: none;">
+                    <label for="custom-target-input">כמה קלוריות לאכול:</label>
+                    <input type="number" id="custom-target-input" value="1600" onchange="updateGoal()">
+                </div>
+                <div class="form-group">
+                    <label for="goal-low">יעד יום נמוך (קל'):</label>
+                    <input type="number" id="goal-low" value="1500" onchange="updateGoal()">
+                </div>
+                <div class="form-group">
+                    <label for="goal-high">יעד יום גבוה (קל'):</label>
+                    <input type="number" id="goal-high" value="1800" onchange="updateGoal()">
+                </div>
+
+                <div class="section-divider" style="margin-top: 15px; padding-top: 10px;">
+                    <h3 style="font-size: 0.9em; color: #81c784; text-align: right; margin-bottom: 8px;">👤 נתונים אישיים להמלצת TDEE אוטומטית</h3>
+                    <div class="form-group">
+                        <label for="main-gender">מין:</label>
+                        <select id="main-gender" onchange="calculateMainAiRecommendation()">
+                            <option value="m">זכר</option>
+                            <option value="f" selected>נקבה</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="main-age">גיל:</label>
+                        <input type="number" id="main-age" value="34" onchange="calculateMainAiRecommendation()">
+                    </div>
+                    <div class="form-group">
+                        <label for="main-height">גובה (ס"מ):</label>
+                        <input type="number" id="main-height" value="169" onchange="calculateMainAiRecommendation()">
+                    </div>
+                    <div class="form-group">
+                        <label for="main-weight">משקל (ק"ג):</label>
+                        <input type="number" id="main-weight" step="0.1" value="61.1" onchange="calculateMainAiRecommendation()">
+                    </div>
+                    <div class="form-group">
+                        <label for="main-activity">רמת פעילות:</label>
+                        <select id="main-activity" onchange="calculateMainAiRecommendation()">
+                            <option value="1.2">יושבני (ללא/מעט פעילות)</option>
+                            <option value="1.375">פעילות קלה (1-3 אימונים)</option>
+                            <option value="1.55" selected>פעילות בינונית (3-5 אימונים)</option>
+                            <option value="1.725">פעילות גבוהה (6-7 אימונים)</option>
+                        </select>
+                    </div>
+                    <div id="main-ai-rec-box" style="margin-top:10px; font-size:0.8em; background:#121814; padding:8px; border-radius:8px; line-height:1.4; color:#e8f5e9;">
+                        טוען המלצת AI מבוססת נתונים אישיים...
+                    </div>
+                </div>
+            </details>
+
+            <details open>
+                <summary>🔍 חיפוש מנות מהיר מתוך החוברת (`sz_nutrition`)</summary>
+                <input type="text" id="searchInput" class="search-box" placeholder="הקלד שם מנה (למשל: פרוסת לחם מלא, קרואסון חמאה, בורקס גבינה, פיתה, עוגת גבינה, פיצה)..." onkeyup="searchFood()">
+                <ul id="resultsList" class="results-list"></ul>
+            </details>
+
+            <div class="portion-list" id="portion-list"></div>
+        </div>
+
+        <!-- עמוד 2: סימון נקי -->
+        <div id="page-clean-tracker" class="page-section">
+            <h2>🎯 🍃 סימון מנות נקי</h2>
+            <div style="font-size: 0.85em; color: #a3b8a5; margin-bottom: 12px; text-align: center;">
+                מעקב נקי ופשוט אחר המנות היומיות שלך:
+            </div>
+
+            <div class="card" style="background: #121814; border: 1px solid #364d3b; margin-bottom: 12px; padding: 10px;">
+                <h3 style="font-size: 0.85em; color: #81c784; margin-top:0; text-align:center;">📋 יעדי מנות מהתזונאית (הגדר יעד יומי)</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 0.75em;">
+                    <div class="form-group" style="flex-direction: column; align-items: center; margin-bottom: 4px;">
+                        <label style="font-size: 0.7em;">חלבון</label>
+                        <input type="number" id="target-target-protein" value="6" style="width: 100%;" onchange="saveCleanTargets()">
+                    </div>
+                    <div class="form-group" style="flex-direction: column; align-items: center; margin-bottom: 4px;">
+                        <label style="font-size: 0.7em;">פחמימה</label>
+                        <input type="number" id="target-target-carbs" value="3" style="width: 100%;" onchange="saveCleanTargets()">
+                    </div>
+                    <div class="form-group" style="flex-direction: column; align-items: center; margin-bottom: 4px;">
+                        <label style="font-size: 0.7em;">שומן</label>
+                        <input type="number" id="target-target-fat" value="1" style="width: 100%;" onchange="saveCleanTargets()">
+                    </div>
+                    <div class="form-group" style="flex-direction: column; align-items: center; margin-bottom: 4px;">
+                        <label style="font-size: 0.7em;">חופשי</label>
+                        <input type="number" id="target-target-free" value="1" style="width: 100%;" onchange="saveCleanTargets()">
+                    </div>
+                    <div class="form-group" style="flex-direction: column; align-items: center; margin-bottom: 4px;">
+                        <label style="font-size: 0.7em;">ירקות</label>
+                        <input type="number" id="target-target-veg" value="1" style="width: 100%;" onchange="saveCleanTargets()">
+                    </div>
+                    <div class="form-group" style="flex-direction: column; align-items: center; margin-bottom: 4px;">
+                        <label style="font-size: 0.7em;">קפה/חלב</label>
+                        <input type="number" id="target-target-milk" value="1" style="width: 100%;" onchange="saveCleanTargets()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="clean-summary-card" class="card" style="background: #121814; border: 1px solid #2d3f31; margin-bottom: 15px;">
+                <h3 style="font-size: 0.9em; color: #4caf50; margin-top:0; text-align:center;">📊 סיכום סך מנות שהגעתי אליהן היום</h3>
+                <div id="clean-summary-content" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.85em; color: #e8f5e9;">
+                </div>
+            </div>
+
+            <div class="portion-list" id="clean-portion-list"></div>
+            <button class="btn-action btn-reset" onclick="resetCleanDay()" style="margin-top: 15px; background: linear-gradient(135deg, #d32f2f, #b71c1c);">🔄 איפוס סימונים נקיים להיום</button>
+        </div>
+
+        <!-- עמוד מנות החוברת -->
+        <div id="page-nutrition-guide" class="page-section">
+            <h2>📖 🥗 מנות החוברת</h2>
+            <div style="font-size: 0.85em; color: #a3b8a5; margin-bottom: 12px; text-align: center;">
+                רשימה מרוכזת מתוך התוכנית של sz_nutrition
+            </div>
+
+            <h3>1. מנות חלבון (עד 100 קלוריות למנה)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>משקל משוער</th>
+                        <th>גודל מנה ביתי</th>
+                        <th>קלוריות וחלבון</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>בשר בקר רזה (שייטל, כתף, סינטה)</td><td>150 גרם</td><td>מנה מבושלת</td><td>200 קל' (2 מנות חלבון)</td></tr>
+                    <tr><td>גבינת קוטג' (3% / 5%)</td><td>100 גרם מדויק</td><td>כ-2/5 עד 1/2 גביע</td><td>~100 קל' (1 חלבון)</td></tr>
+                    <tr><td>טונה במים (מסוננת)</td><td>100 גרם</td><td>כ-1 קופסה מסוננת</td><td>100 קל' (1 חלבון)</td></tr>
+                    <tr><td>חלבוני ביצה (הלבן בלבד)</td><td>192 גרם</td><td>חלבון מ-6 ביצים (L)</td><td>100 קל' (1 חלבון)</td></tr>
+                    <tr><td>יוגורט פרו (Pro 0%)</td><td>166 גרם</td><td>1 גביע + 1 כף גדושה</td><td>100 קל' (1 חלבון)</td></tr>
+                    <tr><td>חזה עוף (מבושל/צלוי)</td><td>60 גרם</td><td>כ-1/2 חזה עוף קטן</td><td>100 קל' (1 חלבון)</td></tr>
+                    <tr><td>טופו במרקם קשה</td><td>77 גרם</td><td>כ-1/4 קובייה</td><td>100 קל' (1 חלבון)</td></tr>
+                    <tr><td>ביצה שלמה (L)</td><td>70 גרם</td><td>כ-1.5 ביצים שלמות</td><td>100 קל' (1 חלבון)</td></tr>
+                    <tr><td>חזה עוף (מבושל/צלוי ללא עור)</td><td>60 גרם</td><td>כ-1/2 חזה עוף קטן</td><td>כ-100 קל' ו-18 גרם חלבון</td></tr>
+                    <tr><td>חזה הודו (פרוס/צלוי)</td><td>70 גרם</td><td>לא מצוין</td><td>כ-100 קל' ו-20 גרם חלבון</td></tr>
+                    <tr><td>בקר רזה (כמו סינטה או פילה מבושל)</td><td>55 גרם</td><td>לא מצוין</td><td>כ-100 קל' ו-15 גרם חלבון</td></tr>
+                    <tr><td>טונה בהירה במים (מסוננת)</td><td>90 גרם</td><td>כקופסה קטנה</td><td>כ-100 קל' ו-22 גרם חלבון</td></tr>
+                    <tr><td>דג אמנון / מושט (אפוי)</td><td>80 גרם</td><td>לא מצוין</td><td>כ-100 קל' ו-16 גרם חלבון</td></tr>
+                    <tr><td>דג סלמון (אפוי)</td><td>50 גרם</td><td>לא מצוין</td><td>כ-100 קל' ו-11 גרם חלבון</td></tr>
+                    <tr><td>גבינת קוטג' 1% או 3%</td><td>100 גרם</td><td>כחצי גביע</td><td>כ-80 עד 100 קל' ו-11 גרם חלבון</td></tr>
+                    <tr><td>גבינה לבנה 3% / 5%</td><td>100 גרם</td><td>לא מצוין</td><td>כ-75 עד 90 קל' ו-10 גרם חלבון</td></tr>
+                    <tr><td>יוגורט יווני 0% או יוגורט חלבון (Pro)</td><td>150-200 גרם</td><td>גביע אחד (תלוי במותג)</td><td>כ-80 עד 100 קל' ו-11 עד 20 גרם חלבון</td></tr>
+                    <tr><td>גבינה צהובה לייט (9% שומן)</td><td>כ-44 גרם</td><td>2 פרוסות</td><td>כ-100 קל' ו-14 גרם חלבון</td></tr>
+                    <tr><td>גבינת צפתית או בולגרית מעודנת 5%</td><td>80 גרם</td><td>לא מצוין</td><td>כ-100 קל' ו-10 גרם חלבון</td></tr>
+                    <tr><td>גבינת ריקוטה 5%</td><td>100 גרם</td><td>לא מצוין</td><td>כ-100 קל' ו-9 גרם חלבון</td></tr>
+                    <tr><td>חלבון ביצה (החלק הלבן בלבד)</td><td>לא מצוין</td><td>4 חלבונים של ביצה גדולה (L)</td><td>כ-70 קל' ו-15 גרם חלבון</td></tr>
+                    <tr><td>ביצה שלמה (קשה או עשויה ללא שמן)</td><td>לא מצוין</td><td>ביצה אחת גדולה (L) ועוד חצי חלבון</td><td>כ-100 קל' ו-8 גרם חלבון</td></tr>
+                </tbody>
+            </table>
+
+            <h3>2. מנות פחמימה (עד 100 קלוריות למנה)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>משקל משוער</th>
+                        <th>קלוריות ומנות</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1 פרוסת לחם מלא</td><td>1 פרוסה</td><td>כ-30-35 גרם</td><td>80-100 קל' (1 פחמימה)</td></tr>
+                    <tr><td>2 פרוסות לחם קל</td><td>2 פרוסות</td><td>כ-50 גרם</td><td>~100 קל' (1 פחמימה)</td></tr>
+                    <tr><td>פריכיות אורז/תירס</td><td>3 יחידות</td><td>כ-25 גרם</td><td>~100 קל' (1 פחמימה)</td></tr>
+                    <tr><td>פיתה רגילה</td><td>חצי פיתה</td><td>35-55 גרם</td><td>140 קל' (1.5 פחמימה)</td></tr>
+                    <tr><td>פיתה אנג'ל פרו</td><td>יחידה שלמה</td><td>70 גרם</td><td>140 קל' (1.5 פחמימה)</td></tr>
+                    <tr><td>פיתה 99</td><td>יחידה שלמה</td><td>לא מצוין</td><td>120 קל' (1.2 פחמימה)</td></tr>
+                    <tr><td>חטיף 99</td><td>יחידה אחת</td><td>לא מצוין</td><td>120 קל' (1.2 פחמימה)</td></tr>
+                    <tr><td>אורז לבן/מלא (מבושל)</td><td>כ-3 כפות גדושות</td><td>כ-70 גרם</td><td>~90 קל'</td></tr>
+                    <tr><td>פסטה (מבושלת)</td><td>כ-1/2 כוס</td><td>כ-65 גרם</td><td>~90 קל'</td></tr>
+                    <tr><td>ברנפלקס פייבר 1</td><td>כ-3/4 כוס</td><td>30 גרם</td><td>93 קל'</td></tr>
+                    <tr><td>אוכמניות (טריות)</td><td>כוס מלאה</td><td>כ-150 גרם</td><td>~85 קל'</td></tr>
+                    <tr><td>תפוח עץ</td><td>1 יחידה בינונית</td><td>כ-150 גרם</td><td>~80 קל'</td></tr>
+                    <tr><td>בורגול מבושל</td><td>כ-3 כפות גדושות</td><td>כ-85 גרם</td><td>~95 קל'</td></tr>
+                    <tr><td>כוסמת מבושלת</td><td>כ-3 כפות גדושות</td><td>כ-80 גרם</td><td>~90 קל'</td></tr>
+                    <tr><td>אורז (לבן או מלא מבושל)</td><td>3 כפות גדושות</td><td>כ-75 גרם</td><td>~100 קל'</td></tr>
+                    <tr><td>פסטה (מבושלת)</td><td>כחצי כוס</td><td>75 גרם</td><td>~100 קל'</td></tr>
+                    <tr><td>תפוח אדמה / בטטה (אפוי)</td><td>יחידה קטנה מאוד או חצי יחידה בינונית</td><td>100 גרם</td><td>~90 קל'</td></tr>
+                    <tr><td>שיבולת שועל (לפני בישול)</td><td>כ-2.5 כפות</td><td>25 גרם</td><td>~95 קל'</td></tr>
+                    <tr><td>פרוסת לחם</td><td>פרוסה אחת של לחם אחיד/מלא, או 2 פרוסות לחם קל</td><td>לא מצוין</td><td>~75 עד 90 קל'</td></tr>
+                    <tr><td>פריכיות אורז</td><td>3 פריכיות רגילות</td><td>לא מצוין</td><td>~90 קל'</td></tr>
+                    <tr><td>תירס (גרגירים מבושלים או מקופסה)</td><td>כחצי כוס</td><td>100 גרם</td><td>~90 קל'</td></tr>
+                </tbody>
+            </table>
+
+            <h3>3. מנות שומן (עד 50 קלוריות למנה)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>משקל משוער</th>
+                        <th>קלוריות</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>חלמון ביצה (הצהוב)</td><td>1 חלמון מביצה L</td><td>כ-17 גרם</td><td>~55 קל'</td></tr>
+                    <tr><td>שקדים טבעיים</td><td>כ-6 יחידות</td><td>7 גרם</td><td>~45 קל'</td></tr>
+                    <tr><td>אגוזי קשיו (טבעי)</td><td>כ-4 יחידות</td><td>8 גרם</td><td>~45 קל'</td></tr>
+                    <tr><td>אגוז ברזיל</td><td>יחידה אחת גדולה</td><td>7 גרם</td><td>~45 קל'</td></tr>
+                    <tr><td>אגוזי מלך</td><td>כ-2 חצאים</td><td>7 גרם</td><td>~45 קל'</td></tr>
+                    <tr><td>זרעי דלעת / חמנייה</td><td>כ-1 כפית שטוחה</td><td>8 גרם</td><td>~45 קל'</td></tr>
+                    <tr><td>זרעי צ'יה / פשתן</td><td>כ-1 כפית שטוחה</td><td>9 גרם</td><td>~45 קל'</td></tr>
+                    <tr><td>אבוקדו</td><td>כ-1/6 אבוקדו בינוני</td><td>30 גרם</td><td>~50 קל'</td></tr>
+                    <tr><td>שמן זית</td><td>כ-1/2 כפית</td><td>5 גרם</td><td>~45 קל'</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🥐 מאפים מתוקים ומלוחים (בצקי עלים ושמרים)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>קרואסון חמאה גדול</td><td>כ-90 גרם</td><td>כ-360 קלוריות</td><td>1.5 פחמימה + 4 שומן</td></tr>
+                    <tr><td>מאפה שוקולד / קרואסון שוקולד גדול</td><td>כ-100 גרם</td><td>כ-430 קלוריות</td><td>2 פחמימה + 4.5 שומן</td></tr>
+                    <tr><td>בורקס גבינה / תפוח אדמה גדול</td><td>כ-100 גרם</td><td>כ-360 קלוריות</td><td>1.5 פחמימה + 4 שומן</td></tr>
+                    <tr><td>מיני רוגלך שוקולד / מיני מאפה קינמון</td><td>יחידה אחת (כ-25 גרם)</td><td>כ-155 קלוריות</td><td>1 פחמימה + 1 שומן</td></tr>
+                    <tr><td>מיני בורקס</td><td>יחידה אחת (כ-30 גרם)</td><td>כ-110 קלוריות</td><td>0.5 פחמימה + 1 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🥖 לחמים, פיתות ולחמניות (דלי שומן)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>פיתה רגילה</td><td>יחידה אחת (כ-80-90 גרם)</td><td>כ-230 קלוריות</td><td>2 פחמימה + 0 שומן</td></tr>
+                    <tr><td>לחמנייה רגילה / לחמניית המבורגר</td><td>יחידה אחת (כ-80 גרם)</td><td>כ-240 קלוריות</td><td>2 פחמימה + 0.5 שומן</td></tr>
+                    <tr><td>פרוסת לחם אחיד / לבן / מחמצת</td><td>פרוסה רגילה (כ-30 גרם)</td><td>כ-75 קלוריות</td><td>0.7 פחמימה + 0 שומן</td></tr>
+                    <tr><td>בייגל אמריקאי גדול</td><td>יחידה אחת (כ-100 גרם)</td><td>כ-290 קלוריות</td><td>2.5 פחמימה + 0.5 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🧁 עוגות, עוגיות ומאפים בחושים</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>פרוסת עוגה בחושה / שיש / מייפל</td><td>פרוסה ממוצעת (כ-60 גרם)</td><td>כ-260 קלוריות</td><td>1.5 פחמימה + 2 שומן</td></tr>
+                    <tr><td>מאפין שוקולד / וניל גדול</td><td>יחידה אחת (כ-90 גרם)</td><td>כ-410 קלוריות</td><td>2.5 פחמימה + 3 שומן</td></tr>
+                    <tr><td>עוגיית שוקולד צ'יפס גדולה</td><td>יחידה אחת (כ-50 גרם)</td><td>כ-250 קלוריות</td><td>1.5 פחמימה + 2 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🥖 לחמים מיוחדים, פיתות ובאגטים</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>פיתה לבנה גדולה</td><td>120 גרם</td><td>כ-320 קלוריות</td><td>3 פחמימה + 0 שומן</td></tr>
+                    <tr><td>באגט לבן גדול</td><td>יחידה של כ-250 גרם</td><td>כ-670 קלוריות</td><td>6 פחמימה + 0.5 שומן</td></tr>
+                    <tr><td>חצי באגט</td><td>כ-125 גרם</td><td>כ-335 קלוריות</td><td>3 פחמימה + 0 שומן</td></tr>
+                    <tr><td>בייגלה רומני עם שומשום</td><td>יחידה גדולה (כ-130 גרם)</td><td>כ-410 קלוריות</td><td>3.5 פחמימה + 1 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🍰 עוגות גבינה ועוגות שונות</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>עוגת גבינה אפויה (קלאסית/קונדיטוריה)</td><td>פרוסה ממוצעת (כ-100 גרם)</td><td>כ-260 קלוריות</td><td>1.5 פחמימה + 2.5 שומן</td></tr>
+                    <tr><td>עוגת גבינה פירורים קרה</td><td>פרוסה ממוצעת (כ-100 גרם)</td><td>כ-340 קלוריות</td><td>2 פחמימה + 4 שומן</td></tr>
+                    <tr><td>פרוסת עוגת שוקולד חמה / פאדג'</td><td>פרוסה ממוצעת (כ-100 גרם)</td><td>כ-390 קלוריות</td><td>3 פחמימה + 4 שומן</td></tr>
+                    <tr><td>פרוסת עוגת שמרים קראנץ' (שוקולד/פרג)</td><td>פרוסה ממוצעת (כ-100 גרם)</td><td>כ-380 קלוריות</td><td>2.5 פחמימה + 3.5 שומן</td></tr>
+                    <tr><td>פרוסת עוגת טארט פירות</td><td>פרוסה ממוצעת (כ-100 גרם)</td><td>כ-310 קלוריות</td><td>2.5 פחמימה + 2.5 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🍦 גביעי גלידת חלבון [PRO] (שטראוס במאגדות)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>גביע גלידת חלבון [PRO] (שטראוס)</td><td>יחידה אחת</td><td>כ-140 קלוריות</td><td>1 חלבון + 1 פחמימה + 0.5 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🍫 שלגוני שמנת פרימיום</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>מגנום קלאסי / שוקולד מריר</td><td>יחידה גדולה</td><td>כ-260 קלוריות</td><td>2 פחמימה + 3 שומן</td></tr>
+                    <tr><td>מגנום מיני</td><td>יחידה אחת מהמאגדת</td><td>כ-150 קלוריות</td><td>1.2 פחמימה + 1.8 שומן</td></tr>
+                    <tr><td>טילון גדול (קורנטו קלאסי)</td><td>יחידה אחת</td><td>כ-240 קלוריות</td><td>2.5 פחמימה + 2 שומן</td></tr>
+                    <tr><td>קראנץ' (נוטלה, פיסטוק או קלאסי)</td><td>יחידה אחת</td><td>כ-250 קלוריות</td><td>2 פחמימה + 3 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🍋 שלגוני פרי וקרח (ללא שומן כלל)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>שלגון פרילי / פריז (על בסיס פרי)</td><td>יחידה אחת</td><td>כ-80 קלוריות</td><td>0.8 פחמימה + 0 שומן</td></tr>
+                    <tr><td>קרטיב קרח רגיל (דובדבן/לימון/אננס)</td><td>יחידה אחת</td><td>כ-60 קלוריות</td><td>0.6 פחמימה + 0 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🍨 גלידות משפחתיות בקופסה (לפי כדור גדול - כ-70 גרם)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>גלידת בן אנד ג'ריס (צ'אנקי מונקי / קוקי דו)</td><td>כדור גדול</td><td>כ-200 קלוריות לכדור</td><td>2 פחמימה + 2.5 שומן</td></tr>
+                    <tr><td>גלידת שמנת רגילה בקופסה (שטראוס)</td><td>כדור גדול</td><td>כ-140 קלוריות לכדור</td><td>1.5 פחמימה + 1.5 שומן</td></tr>
+                    <tr><td>גלידת סורבה (מים ופרי)</td><td>כדור גדול</td><td>כ-90 קלוריות לכדור</td><td>1 פחמימה + 0 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🍨 גלידריות בוטיק (לפי כדור בינוני - כ-80 גרם)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>גלידת שמנת עשירה מגולדה (בייגלה מלוח, פיסטוק...)</td><td>כדור בינוני</td><td>כ-240 קלוריות לכדור</td><td>2.2 פחמימה + 3 שומן</td></tr>
+                    <tr><td>גלידת שמנת ללא סוכר מגולדה</td><td>כדור בינוני</td><td>כ-160 קלוריות לכדור</td><td>1 פחמימה + 2 שומן</td></tr>
+                    <tr><td>גלידת סורבה מגולדה (מנגו, תות, קוקוס)</td><td>כדור בינוני</td><td>כ-110 קלוריות לכדור</td><td>1.2 פחמימה + 0 שומן (קוקוס: 0.5 שומן)</td></tr>
+                    <tr><td>תוספת רטבים של גולדה (בייגלה מלוח/שוקולד)</td><td>כף אחת ממוצעת</td><td>כ-90 קלוריות</td><td>0.5 פחמימה + 1.2 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🧊 גלידוניות (שלגוני מיני ביס)</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>גלידונית שטראוס קלאסית</td><td>יחידה אחת קטנה (~15 גרם)</td><td>כ-40 קלוריות</td><td>0.3 פחמימה + 0.5 שומן (3 יח' = 1 פחמימה + 1.5 שומן)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>🍕 אוכל רחוב ומנות בחוץ</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות משוערות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>פיצה משפחתית (בפיצרייה)</td><td>משולש אחד רגיל (עם גבינה צהובה רגילה)</td><td>כ-300 קל'</td><td>2 פחמימה + 2 שומן</td></tr>
+                    <tr><td>צ'יפס (בדוכן / פלאפליה)</td><td>מנה אישית קטנה / חצי קרטון (~100 גרם)</td><td>כ-300 קל'</td><td>2 פחמימה + 2 שומן</td></tr>
+                    <tr><td>פלאפל בפיתה</td><td>חצי מנת פלאפל (חצי פיתה, 3 כדורים, סלטים, טחינה)</td><td>כ-400 קל'</td><td>3 פחמימה + 2 שומן</td></tr>
+                    <tr><td>שווארמה בפיתה</td><td>מנה שלמה (הודו/פרגית, טחינה, סלטים)</td><td>כ-750 קל'</td><td>3 פחמימה + 3 חלבון + 3 שומן</td></tr>
+                    <tr><td>שווארמה בלאפה</td><td>מנה שלמה (הודו/פרגית, טחינה, סלטים)</td><td>כ-1,100 קל'</td><td>6 פחמימה + 3 חלבון + 4 שומן</td></tr>
+                    <tr><td>המבורגר בלחמנייה (במסעדה)</td><td>קציצה קלאסית (150-180 גרם) בלחמנייה עם ירקות/רטבים</td><td>כ-600 קל'</td><td>2.5 פחמימה + 2.5 חלבון + 2 שומן</td></tr>
+                </tbody>
+            </table>
+
+            <h3>5. גלידות וקינוחים 🍦</h3>
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>שם המאכל</th>
+                        <th>גודל מנה מומלץ</th>
+                        <th>קלוריות משוערות</th>
+                        <th>רישום באפליקציה (מנות)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>גלידת פלמביר רוסי</td><td>כ-85 גרם (כוס או מנה מקופסה)</td><td>200 קל'</td><td>2 פחמימה</td></tr>
+                    <tr><td>גלידה משפחתית רגילה בקופסה</td><td>כדור 1 גדול / 2 קטנים (~100 גרם)</td><td>200 קל'</td><td>2 פחמימה</td></tr>
+                    <tr><td>קסטה / קוקילידה קטנה</td><td>יחידה אחת ממוצעת</td><td>200 קל'</td><td>2 פחמימה</td></tr>
+                    <tr><td>גלידות חלבון או לייט (Halo Top / גוד קו)</td><td>כחצי קופסה (פיינט) שלמה</td><td>200 קל'</td><td>2 פחמימה</td></tr>
+                    <tr><td>שלגוני יוגורט או סורבה פירות</td><td>שלגון אחד בינוני</td><td>200 קל'</td><td>2 פחמימה</td></tr>
+                    <tr><td>מגנום גדול (קלאסי / שקדים / לבן)</td><td>שלגון אחד שלם מהפיצוציה</td><td>~250-300 קל'</td><td>2 פחמימה + 1 שומן</td></tr>
+                    <tr><td>טילון ענק (אקסטרים / קורנטו גדול)</td><td>טילון אחד שלם</td><td>~250-300 קל'</td><td>2 פחמימה + 1 שומן</td></tr>
+                    <tr><td>גלידת שמנת פרימיום בכוס (בן אנד ג'ריס / האגן דאז)</td><td>כוסית אישית קטנה (~100 מ"ל)</td><td>~250-300 קל'</td><td>2 פחמימה + 1 שומן</td></tr>
+                    <tr><td>שלגוני קראנץ' / נוטלה / אוראו</td><td>שלגון אחד שלם</td><td>~250-300 קל'</td><td>2 פחמימה + 1 שומן</td></tr>
+                    <tr><td>פלמביר רוסי עשיר במיוחד</td><td>מנה גדולה בגביע וופל / סנדוויץ' (100-120 גרם)</td><td>~250-300 קל'</td><td>2 פחמימה + 1 שומן</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- עמוד 4: תיעוד אימונים ותכנון שבועי -->
+        <div id="page-workouts" class="page-section">
+            <h2>💪 ✨ תכנון ותיעוד אימונים שבועי</h2>
+
+            <div class="card">
+                <h3 style="font-size: 1em; color: #4caf50; margin-top:0; text-align: right;">📝 תיעוד אימון ותרגילים שבוצעו</h3>
+                <div class="form-group">
+                    <label>סוג אימון:</label>
+                    <select id="workout-type-log">
+                        <option value="strength">אימון כוח</option>
+                        <option value="cardio">אימון אירובי</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>יום בשבוע:</label>
+                    <select id="workout-day-log">
+                        <option value="ראשון">ראשון</option>
+                        <option value="שני">שני</option>
+                        <option value="שלישי">שלישי</option>
+                        <option value="רביעי">רביעי</option>
+                        <option value="חמישי">חמישי</option>
+                        <option value="שישי">שישי</option>
+                        <option value="שבת">שבת</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 12px;">
+                    <label style="margin-bottom: 4px; text-align: right;">פירוט תרגילים, משקלים וזמנים:</label>
+                    <textarea id="workout-exercises-log" rows="3" placeholder="למשל: היפ טראסט, RDL..." style="width:100%; border:1px solid #364d3b; border-radius:8px; padding:8px; background:#121814; color:#e8f5e9; font-family:inherit;"></textarea>
+                </div>
+                <button class="btn-action" onclick="addWorkoutLog()">הוסף תיעוד אימון</button>
+            </div>
+
+            <div class="history-list" id="workout-history-list"></div>
+        </div>
+
+        <!-- עמוד: מחשבון TDEE אמיתי -->
+        <div id="page-tdee-calc" class="page-section">
+            <h2>🧮 מחשבון TDEE (Calculator.net Style)</h2>
+            <div class="card">
+                <div style="font-size: 0.85em; color: #a3b8a5; margin-bottom: 12px; text-align: center;">
+                    חישוב הוצאה אנרגטית יומית בדיוק כמו ב-Calculator.net:
+                </div>
+                <div class="form-group">
+                    <label for="calc-net-age">גיל:</label>
+                    <input type="number" id="calc-net-age" value="34">
+                </div>
+                <div class="form-group">
+                    <label for="calc-net-gender">מין:</label>
+                    <select id="calc-net-gender" onchange="toggleBodyFatField()">
+                        <option value="m">זכר</option>
+                        <option value="f" selected>נקבה</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="calc-net-weight">משקל (ק"ג):</label>
+                    <input type="number" id="calc-net-weight" step="0.1" value="61">
+                </div>
+                <div class="form-group">
+                    <label for="calc-net-height">גובה (ס"מ):</label>
+                    <input type="number" id="calc-net-height" value="169">
+                </div>
+                <div class="form-group" id="body-fat-group">
+                    <label for="calc-net-fat">אחוז שומן (%):</label>
+                    <input type="number" id="calc-net-fat" step="0.1" value="25">
+                </div>
+                <div class="form-group">
+                    <label for="calc-net-activity">רמת פעילות:</label>
+                    <select id="calc-net-activity">
+                        <option value="1.2">מעט או ללא פעילות (1.2)</option>
+                        <option value="1.375">פעילות קלה: 1-3 אימונים (1.375)</option>
+                        <option value="1.465" selected>פעילות בינונית: 3-5 אימונים (1.465)</option>
+                        <option value="1.55">פעילות גבוהה: 6-7 אימונים (1.55)</option>
+                        <option value="1.725">פעילות מאומצת מאוד (1.725)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="calc-net-formula">נוסחת חישוב:</label>
+                    <select id="calc-net-formula">
+                        <option value="mifflin" selected>Mifflin-St Jeor (מומלץ)</option>
+                        <option value="katch">Katch-McArdle</option>
+                        <option value="revised">Revised Harris-Benedict</option>
+                    </select>
+                </div>
+                <button class="btn-action" onclick="calculateCalculatorNetTdee()">חשב TDEE מדויק</button>
+            </div>
+
+            <div class="card" id="calc-net-results-card" style="display: none; background: #121814; border: 1px solid #4caf50;">
+                <h3 style="font-size: 1em; color: #4caf50; text-align: center; margin-top:0;">📊 תוצאות TDEE</h3>
+                <div id="calc-net-results-content" style="font-size: 0.85em; color: #e8f5e9; line-height: 1.6;"></div>
+            </div>
+        </div>
+
+        <!-- עמוד 5: מעקב שקילה, היקף טבור, נתונים אישיים ו-AI להתאמת תפריט ומנות -->
+        <div id="page-progress-ai" class="page-section">
+            <h2>📈 🤖 מעקב וניתוח תפריט חכם (AI)</h2>
+            
+            <div class="card">
+                <h3 style="font-size: 1em; color: #4caf50; margin-top:0; text-align: right;">👤 נתונים אישיים והתאמת AI</h3>
+                <div class="form-group">
+                    <label for="ai-gender">מין:</label>
+                    <select id="ai-gender">
+                        <option value="m">זכר</option>
+                        <option value="f" selected>נקבה</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ai-age">גיל:</label>
+                    <input type="number" id="ai-age" value="34">
+                </div>
+                <div class="form-group">
+                    <label for="ai-height">גובה (ס"מ):</label>
+                    <input type="number" id="ai-height" value="169">
+                </div>
+                <div class="form-group">
+                    <label for="ai-weight">משקל נוכחי (ק"ג):</label>
+                    <input type="number" id="ai-weight" step="0.1" value="61.1">
+                </div>
+                <div class="form-group">
+                    <label for="ai-activity">רמת פעילות:</label>
+                    <select id="ai-activity">
+                        <option value="1.2">יושבני</option>
+                        <option value="1.375">פעילות קלה (1-3 אימונים)</option>
+                        <option value="1.55" selected>פעילות בינונית (3-5 אימונים)</option>
+                        <option value="1.725">פעילות גבוהה (6-7 אימונים)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ai-hunger">מצב רעב / תיאבון:</label>
+                    <select id="ai-hunger">
+                        <option value="normal">רגיל / מאוזן</option>
+                        <option value="high">רעב מוגבר / חשק למתוק</option>
+                        <option value="low">שובע / אין תיאבון מיוחד</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="input-waist">היקף טבור (ס"מ):</label>
+                    <input type="number" id="input-waist" step="0.5" placeholder="70.0">
+                </div>
+                <button class="btn-action" onclick="saveAndRunAiAnalysis()">✨ הפעל התאמת תפריט וקלוריות עם AI</button>
+            </div>
+
+            <div class="card" style="background: #121814; border: 1px solid #4caf50;">
+                <h3 style="font-size: 0.95em; color: #4caf50; margin-top:0; text-align: right;">⚖️ 🤖 ניתוח שקילה חכם בעזרת AI</h3>
+                <div style="font-size: 0.8em; color: #a3b8a5; margin-bottom: 8px;">הזן את שקילת השבוע הנוכחי והשקילה הקודמת לקבלת ניתוח מלא:</div>
+                <div class="form-group">
+                    <label>משקל קודם (ק"ג):</label>
+                    <input type="number" id="prev-weight-input" step="0.1" placeholder="61.5">
+                </div>
+                <div class="form-group">
+                    <label>משקל נוכחי (ק"ג):</label>
+                    <input type="number" id="current-weight-input" step="0.1" placeholder="61.1">
+                </div>
+                <button class="btn-action" style="padding: 8px; font-size: 0.85em; margin-top: 8px;" onclick="analyzeWeighingAi()">🧠 ניתוח שקילה וקביעת מדיניות קלוריות</button>
+                <div id="weighing-ai-output" style="display:none; margin-top:10px; font-size:0.85em; background:#1c261e; padding:10px; border-radius:8px; line-height:1.5; color:#e8f5e9;"></div>
+            </div>
+
+            <div class="ai-insight-box">
+                <div class="ai-insight-header" onclick="toggleAiBox(this)">
+                    <div class="ai-insight-title">🤖 המלצת AI מותאמת אישית לתפריט ומנות</div>
+                    <span class="ai-toggle-arrow">▲</span>
+                </div>
+                <div class="ai-insight-content">
+                    <div id="ai-custom-diet-recommendation">לחץ על הכפתור למעלה כדי לקבל חישוב TDEE והמלצת מנות מדויקת על בסיס הנתונים שלך...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size: 0.95em; color: #c8e6c9; text-align:center; margin-top:0;">📉 גרף מעקב משקל</h3>
+                <div style="position: relative; height: 160px; width: 100%;">
+                    <canvas id="weightGraphCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size: 0.95em; color: #c8e6c9; text-align:center; margin-top:0;">📏 גרף מעקב היקף טבור</h3>
+                <div style="position: relative; height: 160px; width: 100%;">
+                    <canvas id="waistGraphCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="section-divider">
+                <h3 style="font-size: 1em; color: #4caf50; text-align: right;">📋 היסטוריית מדידות</h3>
+                <div class="history-list" id="progress-history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- לוגו וקטורי בתחתית העמוד -->
+    <div class="app-footer-logo">
+        <div class="real-logo-svg-wrapper" id="footerLogoContainer">
+            <svg viewBox="0 0 130 130" width="100%" height="100%">
+                <defs>
+                    <path id="circlePath" d="M 65, 65 m -50, 0 a 50,50 0 1,1 100,0 a 50,50 0 1,1 -100,0" />
+                </defs>
+                <circle cx="65" cy="65" r="61" fill="none" stroke="#233327" stroke-width="3"/>
+                <circle cx="65" cy="65" r="57" fill="none" stroke="#81c784" stroke-width="1.2"/>
+                
+                <path d="M 65 65 L 15 65 A 50 50 0 0 1 65 15 Z" fill="#2e7d32"/>
+                <path d="M 65 65 L 65 15 A 50 50 0 0 1 115 65 Z" fill="#388e3c"/>
+                <path d="M 65 65 L 115 65 A 50 50 0 0 1 65 115 Z" fill="#4caf50"/>
+                <path d="M 65 65 L 65 115 A 50 50 0 0 1 15 65 Z" fill="#66bb6a"/>
+                
+                <line x1="65" y1="15" x2="65" y2="115" stroke="#81c784" stroke-width="1"/>
+                <line x1="15" y1="65" x2="115" y2="65" stroke="#81c784" stroke-width="1"/>
+                
+                <circle cx="65" cy="65" r="18" fill="#121814" stroke="#81c784" stroke-width="1.5"/>
+                
+                <text font-size="9" font-weight="bold" fill="#e8f5e9" letter-spacing="1.2">
+                    <textPath href="#circlePath" startOffset="50%" text-anchor="middle">SZ_NUTRITION</textPath>
+                </text>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<script>
+    const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    let currentDayIndex = 0;
+    let currentDateObj = new Date();
+
+    const portionsData = [
+        { id: 'protein-1', group: 'protein', name: 'חלבון (מנה אחת - עד 100 קל\')', cleanName: 'חלבון (עד 100 קל\')', calories: 100, proteinGrams: 20, fatGrams: 1.5, carbGrams: 2, icon: '🥛', details: 'יוגורט פרו, קוטג\' (100 גרם), ביצה + חלבון', step: 0.5 },
+        { id: 'carbs-100', group: 'carbs', name: 'פחמימה (מנה אחת - 100 קל\')', cleanName: 'פחמימה (100 קל\')', calories: 100, proteinGrams: 3, fatGrams: 0.5, carbGrams: 21, icon: '🍞', details: 'לחם מלא (פרוסה), לחם קל (2 פרוסות), פריכיות', step: 0.5 },
+        { id: 'fat', group: 'fat', name: 'שומן (מנה אחת - 50 קל\')', cleanName: 'שומן (50 קל\')', calories: 50, proteinGrams: 1, fatGrams: 5.5, carbGrams: 0.5, icon: '🥑', details: 'שקדים, אגוזים, שמן זית, טחינה, אבוקדו', step: 0.5 },
+        { id: 'carbs-140-pro', group: 'carbs', name: 'פחמימה 1.5 - פיתה אנג\'ל פרו (140 קל\')', cleanName: 'פחמימה 1.5 (אנג\'ל פרו)', calories: 140, proteinGrams: 4, fatGrams: 1, carbGrams: 29, icon: '🥖', details: 'פיתה אנג\'ל פרו שלמה / פיתה רגילה חצויה', step: 0.5 },
+        { id: 'carbs-120-pith99', group: 'carbs', name: 'פחמימה 1.2 - פיתה/חטיף 99 (120 קל\')', cleanName: 'פחמימה 1.2 (פיתה/חטיף 99)', calories: 120, proteinGrams: 3.5, fatGrams: 0.8, carbGrams: 25, icon: '🫓', details: 'פיתה 99 / חטיף 99 יחידה שלמה', step: 0.5 },
+        { id: 'coffee-milk', group: 'carbs', name: 'קפה וחלב (100 קל\')', cleanName: 'קפה וחלב', calories: 100, proteinGrams: 6, fatGrams: 3, carbGrams: 12, icon: '☕', details: '200 מל = 1 מנה / 100 מל = חצי מנה', step: 0.5 },
+        { id: 'free-item', group: 'free', name: 'חופשי (מנה אחת - 100 קל\')', cleanName: 'חופשי (100 קל\')', calories: 100, proteinGrams: 2, fatGrams: 3.5, carbGrams: 15, icon: '🍦', details: 'שוקולד, פינוק (100 קל\' = 1 חופשי)', step: 0.5 },
+        { id: 'veg', group: 'veg', name: 'מנת ירקות', cleanName: 'ירקות', calories: 20, proteinGrams: 1, fatGrams: 0.1, carbGrams: 4, icon: '🥗', details: 'ירקות חיים או מבושלים', step: 0.5 }
+    ];
+
+    const foodDatabase = [
+        /* שלגוני שמנת פרימיום */
+        { name: "מגנום קלאסי / שוקולד מריר", amount: "יחידה גדולה", calories: "כ-260 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2, fat: 3 } },
+        { name: "מגנום מיני", amount: "יחידה אחת מהמאגדת", calories: "כ-150 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 1.2, fat: 1.8 } },
+        { name: "טילון גדול (קורנטו קלאסי)", amount: "יחידה אחת", calories: "כ-240 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2.5, fat: 2 } },
+        { name: "קראנץ' (נוטלה, פיסטוק או קלאסי)", amount: "יחידה אחת", calories: "כ-250 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2, fat: 3 } },
+
+        /* שלגוני פרי וקרח */
+        { name: "שלגון פרילי / פריז (על בסיס פרי)", amount: "יחידה אחת", calories: "כ-80 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 0.8, fat: 0 } },
+        { name: "קרטיב קרח רגיל (דובדבן/לימון/אננס)", amount: "יחידה אחת", calories: "כ-60 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 0.6, fat: 0 } },
+
+        /* גלידות משפחתיות בקופסה (כדור גדול) */
+        { name: "גלידת בן אנד ג'ריס (צ'אנקי מונקי / קוקי דו)", amount: "כדור גדול (~70 גרם)", calories: "כ-200 קלוריות לכדור", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2, fat: 2.5 } },
+        { name: "גלידת שמנת רגילה בקופסה (שטראוס)", amount: "כדור גדול (~70 גרם)", calories: "כ-140 קלוריות לכדור", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 1.5, fat: 1.5 } },
+        { name: "גלידת סורבה (מים ופרי)", amount: "כדור גדול (~70 גרם)", calories: "כ-90 קלוריות לכדור", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 1, fat: 0 } },
+
+        /* גלידריות בוטיק (כדור בינוני - כ-80 גרם) */
+        { name: "גלידת שמנת עשירה מגולדה (בייגלה מלוח, פיסטוק...)", amount: "כדור בינוני (~80 גרם)", calories: "כ-240 קלוריות לכדור", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2.2, fat: 3 } },
+        { name: "גלידת שמנת ללא סוכר מגולדה", amount: "כדור בינוני (~80 גרם)", calories: "כ-160 קלוריות לכדור", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 1, fat: 2 } },
+        { name: "גלידת סורבה מגולדה (מנגו, תות, קוקוס)", amount: "כדור בינוני (~80 גרם)", calories: "כ-110 קלוריות לכדור", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 1.2, fat: 0 } },
+        { name: "תוספת רטבים של גולדה (בייגלה מלוח / שוקולד)", amount: "כף אחת ממוצעת", calories: "כ-90 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 0.5, fat: 1.2 } },
+
+        /* גלידוניות */
+        { name: "גלידונית שטראוס קלאסית", amount: "יחידה אחת קטנה (~15 גרם)", calories: "כ-40 קלוריות ליחידה", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 0.3, fat: 0.5 } },
+
+        /* מאפים מתוקים ומלוחים (בצקי עלים ושמרים) */
+        { name: "קרואסון חמאה גדול", amount: "כ-90 גרם", calories: "כ-360 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1.5, fat: 4 } },
+        { name: "מאפה שוקולד / קרואסון שוקולד גדול", amount: "כ-100 גרם", calories: "כ-430 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 2, fat: 4.5 } },
+        { name: "בורקס גבינה / תפוח אדמה גדול", amount: "כ-100 גרם", calories: "כ-360 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1.5, fat: 4 } },
+        { name: "מיני רוגלך שוקולד / מיני מאפה קינמון", amount: "יחידה אחת (כ-25 גרם)", calories: "כ-155 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1, fat: 1 } },
+        { name: "מיני בורקס", amount: "יחידה אחת (כ-30 גרם)", calories: "כ-110 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.5, fat: 1 } },
+
+        /* לחמים, פיתות ולחמניות (דלי שומן) */
+        { name: "פיתה רגילה", amount: "יחידה אחת (כ-80-90 גרם)", calories: "כ-230 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 2 } },
+        { name: "לחמנייה רגילה / לחמניית המבורגר", amount: "יחידה אחת (כ-80 גרם)", calories: "כ-240 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 2, fat: 0.5 } },
+        { name: "פרוסת לחם אחיד / לבן / מחמצת", amount: "פרוסה רגילה (כ-30 גרם)", calories: "כ-75 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.7 } },
+        { name: "בייגל אמריקאי גדול", amount: "יחידה אחת (כ-100 גרם)", calories: "כ-290 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 2.5, fat: 0.5 } },
+
+        /* עוגות, עוגיות ומאפים בחושים */
+        { name: "פרוסת עוגה בחושה / שיש / מייפל", amount: "פרוסה ממוצעת (כ-60 גרם)", calories: "כ-260 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1.5, fat: 2 } },
+        { name: "מאפין שוקולד / וניל גדול", amount: "יחידה אחת (כ-90 גרם)", calories: "כ-410 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 2.5, fat: 3 } },
+        { name: "עוגיית שוקולד צ'יפס גדולה", amount: "יחידה אחת (כ-50 גרם)", calories: "כ-250 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1.5, fat: 2 } },
+
+        /* לחמים מיוחדים, פיתות ובאגטים */
+        { name: "פיתה לבנה גדולה", amount: "120 גרם", calories: "כ-320 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 3 } },
+        { name: "באגט לבן גדול", amount: "יחידה של כ-250 גרם", calories: "כ-670 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 6, fat: 0.5 } },
+        { name: "חצי באגט", amount: "כ-125 גרם", calories: "כ-335 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 3 } },
+        { name: "בייגלה רומני עם שומשום", amount: "יחידה גדולה (כ-130 גרם)", calories: "כ-410 קלוריות", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 3.5, fat: 1 } },
+
+        /* עוגות גבינה ועוגות שונות */
+        { name: "עוגת גבינה אפויה (קלאסית/קונדיטוריה)", amount: "פרוסה ממוצעת (כ-100 גרם)", calories: "כ-260 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 1.5, fat: 2.5 } },
+        { name: "עוגת גבינה פירורים קרה", amount: "פרוסה ממוצעת (כ-100 גרם)", calories: "כ-340 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2, fat: 4 } },
+        { name: "פרוסת עוגת שוקולד חמה / פאדג'", amount: "פרוסה ממוצעת (כ-100 גרם)", calories: "כ-390 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 3, fat: 4 } },
+        { name: "פרוסת עוגת שמרים קראנץ' (שוקולד/פרג)", amount: "פרוסה ממוצעת (כ-100 גרם)", calories: "כ-380 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2.5, fat: 3.5 } },
+        { name: "פרוסת עוגת טארט פירות", amount: "פרוסה ממוצעת (כ-100 גרם)", calories: "כ-310 קלוריות", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2.5, fat: 2.5 } },
+
+        /* פחמימות קיימות */
+        { name: "פרוסת לחם מלא", amount: "1 פרוסה (80-100 קל')", calories: "~90 קל' (1 פחמימה)", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1 } },
+        { name: "2 פרוסות לחם קל", amount: "2 פרוסות (~100 קל')", calories: "~100 קל' (1 פחמימה)", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1 } },
+        { name: "לחם מלא", amount: "1 פרוסה", calories: "80-100 קל' (1 פחמימה)", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1 } },
+        { name: "לחם קל", amount: "2 פרוסות", calories: "100 קל' (1 פחמימה)", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1 } },
+        { name: "פריכיות", amount: "3 יחידות", calories: "~100 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1 } },
+        { name: "פריכיות אורז", amount: "3 יחידות", calories: "~100 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1 } },
+        { name: "פיתה", amount: "חצי פיתה", calories: "140 קל'", category: "פחמימה", targetPortionId: "carbs-140-pro", customPortions: { carbs: 1.5 } },
+        { name: "פיתה רגילה", amount: "חצי פיתה", calories: "140 קל'", category: "פחמימה", targetPortionId: "carbs-140-pro", customPortions: { carbs: 1.5 } },
+        { name: "פיתה אנג'ל פרו", amount: "יחידה שלמה (70 גרם)", calories: "140 קל'", category: "פחמימה", targetPortionId: "carbs-140-pro", customPortions: { carbs: 1.5 } },
+        { name: "פיתה 99", amount: "יחידה שלמה", calories: "120 קל' (1.2 פחמימה)", category: "פחמימה", targetPortionId: "carbs-120-pith99", customPortions: { carbs: 1.2 } },
+        { name: "חטיף 99", amount: "יחידה אחת", calories: "120 קל' (1.2 פחמימה)", category: "פחמימה", targetPortionId: "carbs-120-pith99", customPortions: { carbs: 1.2 } },
+        { name: "פיתה שלמה לבנה", amount: "1 פיתה שלמה", calories: "~280 קל' (3 פחמימה)", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 3 } },
+        { name: "אורז לבן/מלא", amount: "3 כפות גדושות (70 גרם)", calories: "~90 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.9 } },
+        { name: "פסטה", amount: "1/2 כוס (65 גרם)", calories: "~90 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.9 } },
+        { name: "ברנפלקס פייבר 1", amount: "3/4 כוס (30 גרם)", calories: "93 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.93 } },
+        { name: "אוכמניות", amount: "כוס מלאה (150 גרם)", calories: "~85 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.85 } },
+        { name: "תפוח עץ", amount: "1 בינוני (150 גרם)", calories: "~80 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.8 } },
+        { name: "בורגול מבושל", amount: "3 כפות גדושות (85 גרם)", calories: "~95 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.95 } },
+        { name: "כוסמת מבושלת", amount: "3 כפות גדושות (80 גרם)", calories: "~90 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.9 } },
+        { name: "אורז (לבן או מלא מבושל)", amount: "3 כפות גדושות (75 גרם)", calories: "~100 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1 } },
+        { name: "פסטה (מבושלת)", amount: "כחצי כוס (75 גרם)", calories: "~100 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 1 } },
+        { name: "תפוח אדמה / בטטה (אפוי)", amount: "100 גרם", calories: "~90 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.9 } },
+        { name: "שיבולת שועל (לפני בישול)", amount: "2.5 כפות (25 גרם)", calories: "~95 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.95 } },
+        { name: "פרוסת לחם", amount: "1 פרוסה לחם אחיד/מלא או 2 קל", calories: "~75 עד 90 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.85 } },
+        { name: "פריכיות אורז", amount: "3 פריכיות רגילות", calories: "~90 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.9 } },
+        { name: "תירס", amount: "חצי כוס (100 גרם)", calories: "~90 קל'", category: "פחמימה", targetPortionId: "carbs-100", customPortions: { carbs: 0.9 } },
+
+        /* שומנים */
+        { name: "חלמון ביצה", amount: "1 חלמון L (17 גרם)", calories: "~55 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 1.1 } },
+        { name: "שקדים טבעיים", amount: "6 יחידות (7 גרם)", calories: "~45 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 0.9 } },
+        { name: "אגוזי קשיו", amount: "4 יחידות (8 גרם)", calories: "~45 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 0.9 } },
+        { name: "אגוז ברזיל", amount: "1 גדול (7 גרם)", calories: "~45 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 0.9 } },
+        { name: "אגוזי מלך", amount: "2 חצאים (7 גרם)", calories: "~45 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 0.9 } },
+        { name: "זרעי דלעת / חמנייה", amount: "1 כפית שטוחה (8 גרם)", calories: "~45 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 0.9 } },
+        { name: "זרעי צ'יה / פשתן", amount: "1 כפית שטוחה (9 גרם)", calories: "~45 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 0.9 } },
+        { name: "אבוקדו", amount: "1/6 אבוקדו (30 גרם)", calories: "~50 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 1 } },
+        { name: "שמן זית", amount: "1/2 כפית (5 גרם)", calories: "~45 קל'", category: "שומן", targetPortionId: "fat", customPortions: { fat: 0.9 } },
+
+        /* חלבונים */
+        { name: "בשר בקר רזה (שייטל, כתף, סינטה)", amount: "150 גרם", calories: "200 קל' (2 חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 2 } },
+        { name: "ביצה", amount: "1 ביצה שלמה L / 70 גרם", calories: "100 קל' (9g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "ביצה שלמה L", amount: "70 גרם", calories: "100 קל' (9g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "קוטג'", amount: "100 גרם", calories: "100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "גבינת קוטג'", amount: "100 גרם", calories: "100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "גביע שלם קוטג' 3%", amount: "גביע שלם", calories: "200 קל' (2 חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 2 } },
+        { name: "גביע שלם גבינה או קוטג' 5%", amount: "גביע שלם", calories: "250 קל' (2 חלבון + חצי שומן)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 2, fat: 0.5 } },
+        { name: "גבינת קוטג' 3%", amount: "100-120 גרם", calories: "100 קל' (13g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "גבינת קוטג' 5%", amount: "100-105 גרם", calories: "100 קל' (11.5g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "טונה במים מסוננת", amount: "100 גרם (קופסה)", calories: "100 קל' (25g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "חלבוני ביצה", amount: "192 גרם (6 ביצים L)", calories: "100 קל' (21g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "יוגורט פרו Pro 0%", amount: "166 גרם (גביע + כף)", calories: "100 קל' (22g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "חזה עוף מבושל/צלוי", amount: "60 גרם", calories: "100 קל' (19g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "טופו קשה", amount: "77 גרם", calories: "100 קל' (11g חלבון)", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "חזה עוף (מבושל/צלוי ללא עור)", amount: "60 גרם", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "חזה הודו (פרוס/צלוי)", amount: "70 גרם", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "בקר רזה (סינטה/פילה מבושל)", amount: "55 גרם", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "טונה בהירה במים (מסוננת)", amount: "90 גרם (קופסה קטנה)", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "דג אמנון / מושט (אפוי)", amount: "80 גרם", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "דג סלמון (אפוי)", amount: "50 גרם", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 0.5 } },
+        { name: "גבינת קוטג' 1% או 3%", amount: "100 גרם (חצי גביע)", calories: "כ-80 עד 100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "גבינה לבנה 3% / 5%", amount: "100 גרם", calories: "כ-75 עד 90 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 0.9 } },
+        { name: "יוגורט יווני 0% או יוגורט חלבון (Pro)", amount: "150-200 גרם (גביע)", calories: "כ-80 עד 100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "גבינה צהובה לייט (9% שומן)", amount: "2 פרוסות (44 גרם)", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "גבינת צפתית או בולגרית מעודנת 5%", amount: "80 גרם", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "גבינת ריקוטה 5%", amount: "100 גרם", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+        { name: "חלבון ביצה (לבן בלבד)", amount: "4 חלבונים (L)", calories: "כ-70 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 0.7 } },
+        { name: "ביצה שלמה (קשה/ללא שמן)", amount: "ביצה L ועוד חצי חלבון", calories: "כ-100 קל'", category: "חלבון", targetPortionId: "protein-1", customPortions: { protein: 1 } },
+
+        /* חופשי / פינוקים */
+        { name: "שוקולד פרה", amount: "2 קוביות (18 גרם)", calories: "~96 קל' (1 חופשי)", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "שוקולד מילקה", amount: "1.5-2 קוביות (17 גרם)", calories: "~95 קל' (1 חופשי)", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "שוקולד מריר 70-85%", amount: "2 קוביות (18 גרם)", calories: "~95 קל' (1 חופשי)", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "פסק זמן / כיף כף / קליק", amount: "אצבע אחת / קליק", calories: "~90 קל' (1 חופשי)", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "טילון מיני", amount: "יחידה 1", calories: "~90-100 קל' (1 חופשי)", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "גלידה (כדור)", amount: "כדור 1", calories: "200 קל' (2 חופשי)", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 2 } },
+        { name: "טילון / מגנום", amount: "יחידה 1 (~300 קל')", calories: "300 קל' (3 חופשי)", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 3 } },
+        { name: "פיצה", amount: "משולש בינוני (~300 קל')", calories: "~300 קל' (3 חופשי)", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 3 } },
+        { name: "שוקולד מריר או חלב", amount: "3 קוביות (18 גרם)", calories: "כ-100 קל'", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "גלידה (כדור וניל/שוקולד או שלגון דיאט)", amount: "כדור 1 (50 גרם) / שלגון", calories: "כ-90 קל'", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 0.9 } },
+        { name: "פיצה (משולש קטן)", amount: "חצי משולש משפחתית (40 גרם)", calories: "כ-100 קל'", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "במבה או ביסלי", amount: "שקית קטנה (15-20 גרם)", calories: "כ-80 עד 100 קל'", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "חטיף שוקולד קטן (מיני)", amount: "יחידה אחת", calories: "כ-90 קל'", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 0.9 } },
+        { name: "ביסקוויט פתיבר", amount: "2.5 יחידות", calories: "כ-100 קל'", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 1 } },
+        { name: "פופקורן ביתי (ללא שמן/חמאה)", amount: "3 כוסות מלאות", calories: "כ-95 קל'", category: "חופשי", targetPortionId: "free-item", customPortions: { free: 0.95 } },
+
+        /* אוכל רחוב ומנות בחוץ */
+        { name: "פיצה משפחתית (בפיצרייה)", amount: "משולש אחד רגיל", calories: "כ-300 קל' (2 פחמימה + 2 שומן)", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2, fat: 2 } },
+        { name: "צ'יפס (בדוכן / פלאפליה)", amount: "מנה אישית קטנה / חצי קרטון (~100 גרם)", calories: "כ-300 קל' (2 פחמימה + 2 שומן)", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2, fat: 2 } },
+        { name: "פלאפל בפיתה", amount: "חצי מנת פלאפל (חצי פיתה, 3 כדורים, סלטים, טחינה)", calories: "כ-400 קל' (3 פחמימה + 2 שומן)", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 3, fat: 2 } },
+        { name: "שווארמה בפיתה", amount: "מנה שלמה (הודו/פרגית, טחינה, סלטים)", calories: "כ-750 קל' (3 פחמימה + 3 חלבון + 3 שומן)", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 3, protein: 3, fat: 3 } },
+        { name: "שווארמה בלאפה", amount: "מנה שלמה (הודו/פרגית, טחינה, סלטים)", calories: "כ-1,100 קל' (6 פחמימה + 3 חלבון + 4 שומן)", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 6, protein: 3, fat: 4 } },
+        { name: "המבורגר בלחמנייה (במסעדה)", amount: "קציצה קלאסית (150-180 גרם) בלחמנייה", calories: "כ-600 קל' (2.5 פחמימה + 2.5 חלבון + 2 שומן)", category: "חופשי", targetPortionId: "free-item", customPortions: { carbs: 2.5, protein: 2.5, fat: 2 } }
+    ];
+
+    let weeklyData = { 'ראשון': {}, 'שני': {}, 'שלישי': {}, 'רביעי': {}, 'חמישי': {}, 'שישי': {}, 'שבת': {} };
+    let activeDay = 'ראשון';
+    let counts = {};
+    let cleanCounts = {};
+    let cleanTargets = { 'חלבון': 6, 'פחמימה': 3, 'שומן': 1, 'חופשי': 1, 'ירקות': 1, 'קפה/חלב': 1 };
+    let workoutHistory = [];
+    let progressHistory = [];
+    let currentCalDate = new Date();
+    let caloriesChart = null;
+    let weightChartInstance = null;
+    let waistChartInstance = null;
+
+    portionsData.forEach(p => { counts[p.id] = 0; cleanCounts[p.id] = 0; });
+    Object.keys(weeklyData).forEach(day => { portionsData.forEach(p => { weeklyData[day][p.id] = 0; }); });
+
+    function toggleAiBox(headerEl) {
+        const contentEl = headerEl.nextElementSibling;
+        headerEl.classList.toggle('collapsed');
+        contentEl.classList.toggle('collapsed');
+        const arrow = headerEl.querySelector('.ai-toggle-arrow');
+        if (arrow) {
+            arrow.innerText = contentEl.classList.contains('collapsed') ? '▼' : '▲';
+        }
+    }
+
+    function switchPage(pageId) {
+        document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        const logoContainer = document.getElementById('footerLogoContainer');
+
+        if (pageId === 'tracker') {
+            document.getElementById('page-tracker').classList.add('active');
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            logoContainer.classList.remove('sparkle-green-logo');
+        } else if (pageId === 'clean-tracker') {
+            document.getElementById('page-clean-tracker').classList.add('active');
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            logoContainer.classList.remove('sparkle-green-logo');
+            renderCleanList();
+        } else if (pageId === 'nutrition-guide') {
+            document.getElementById('page-nutrition-guide').classList.add('active');
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
+            logoContainer.classList.remove('sparkle-green-logo');
+        } else if (pageId === 'workouts') {
+            document.getElementById('page-workouts').classList.add('active');
+            document.querySelectorAll('.tab-btn')[3].classList.add('active');
+            logoContainer.classList.remove('sparkle-green-logo');
+            renderWorkoutHistory();
+        } else if (pageId === 'tdee-calc') {
+            document.getElementById('page-tdee-calc').classList.add('active');
+            document.querySelectorAll('.tab-btn')[4].classList.add('active');
+            logoContainer.classList.remove('sparkle-green-logo');
+        } else if (pageId === 'progress-ai') {
+            document.getElementById('page-progress-ai').classList.add('active');
+            document.querySelectorAll('.tab-btn')[5].classList.add('active');
+            logoContainer.classList.add('sparkle-green-logo');
+            initProgressCharts();
+            renderProgressHistory();
+            saveAndRunAiAnalysis();
+        }
+    }
+
+    function updateDateDisplay() {
+        const dayNamesMap = { 'ראשון': 'יום ראשון', 'שני': 'יום שני', 'שלישי': 'יום שלישי', 'רביעי': 'יום רביעי', 'חמישי': 'יום חמישי', 'שישי': 'יום שישי', 'שבת': 'יום שבת' };
+        document.getElementById('current-day-title').innerText = dayNamesMap[activeDay] || `יום ${activeDay}`;
+        document.getElementById('current-date-subtitle').innerText = currentDateObj.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function navigateDay(direction) {
+        currentDayIndex = (currentDayIndex + direction + 7) % 7;
+        activeDay = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][currentDayIndex];
+        currentDateObj.setDate(currentDateObj.getDate() + direction);
+        
+        counts = weeklyData[activeDay] ? { ...weeklyData[activeDay] } : {};
+        document.querySelectorAll('#daysNavContainer .day-tab').forEach(btn => {
+            btn.innerText.trim() === activeDay ? btn.classList.add('active') : btn.classList.remove('active');
+        });
+        updateDateDisplay();
+        renderList();
+        renderCleanList();
+    }
+
+    function switchActiveDay(dayName) {
+        weeklyData[activeDay] = { ...counts };
+        activeDay = dayName;
+        currentDayIndex = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'].indexOf(dayName);
+        if(currentDayIndex === -1) currentDayIndex = 0;
+        
+        counts = weeklyData[activeDay] ? { ...weeklyData[activeDay] } : {};
+        document.querySelectorAll('#daysNavContainer .day-tab').forEach(btn => {
+            btn.innerText.trim() === activeDay ? btn.classList.add('active') : btn.classList.remove('active');
+        });
+        updateDateDisplay();
+        renderList();
+        renderCleanList();
+    }
+
+    function applyMacroPreset() {
+        const val = document.getElementById('macro-preset-select').value;
+        const customDiv = document.getElementById('custom-macro-inputs');
+        if (val === 'custom') {
+            customDiv.style.display = 'grid';
+        } else {
+            customDiv.style.display = 'none';
+            if (val === 'balanced') {
+                document.getElementById('custom-p-pct').value = 30;
+                document.getElementById('custom-c-pct').value = 40;
+                document.getElementById('custom-f-pct').value = 30;
+            } else if (val === 'highprotein') {
+                document.getElementById('custom-p-pct').value = 35;
+                document.getElementById('custom-c-pct').value = 35;
+                document.getElementById('custom-f-pct').value = 30;
+            } else if (val === 'lowcarb') {
+                document.getElementById('custom-p-pct').value = 40;
+                document.getElementById('custom-c-pct').value = 20;
+                document.getElementById('custom-f-pct').value = 40;
+            }
+        }
+        calculateTotal();
+    }
+
+    function updateCustomMacroPct() {
+        calculateTotal();
+    }
+
+    function updateDualRange() {
+        const minInput = document.getElementById('calorie-range-min');
+        const maxInput = document.getElementById('calorie-range-max');
+        let minVal = parseInt(minInput.value);
+        let maxVal = parseInt(maxInput.value);
+
+        if (minVal > maxVal) {
+            let temp = minVal;
+            minVal = maxVal;
+            maxVal = temp;
+        }
+
+        document.getElementById('range-min-val').innerText = minVal;
+        document.getElementById('range-max-val').innerText = maxVal;
+        calculateTotal();
+    }
+
+    function searchFood() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const resultsList = document.getElementById('resultsList');
+        resultsList.innerHTML = '';
+        if (input.trim() === '') return;
+        const filtered = foodDatabase.filter(item => item.name.toLowerCase().includes(input));
+        if (filtered.length === 0) {
+            resultsList.innerHTML = '<li class="result-item" style="cursor: default; color: #888;">לא נמצאו מנות תואמות בחוברת</li>';
+            return;
+        }
+        filtered.forEach(item => {
+            const li = document.createElement('div');
+            li.className = 'result-item';
+            li.innerHTML = `
+                <span><b>${item.name}</b> (${item.amount}) - <span style="color: #4caf50;">${item.calories}</span></span>
+                <button style="background: linear-gradient(135deg, #4caf50, #2e7d32); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" onclick="addSearchedFoodByItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">הוסף מנה</button>
+            `;
+            resultsList.appendChild(li);
+        });
+    }
+
+    function addSearchedFoodByItem(item) {
+        if (item.customPortions) {
+            for (const [groupKey, val] of Object.entries(item.customPortions)) {
+                let targetId = '';
+                if (groupKey === 'protein') targetId = 'protein-1';
+                else if (groupKey === 'fat') targetId = 'fat';
+                else if (groupKey === 'carbs') targetId = 'carbs-100';
+                else if (groupKey === 'free') targetId = 'free-item';
+
+                if (targetId) changeCount(targetId, val);
+            }
+        }
+        document.getElementById('searchInput').value = '';
+        document.getElementById('resultsList').innerHTML = '';
+    }
+
+    function loadSavedData() {
+        try {
+            const savedWeekly = localStorage.getItem('v14_weekly_data');
+            if (savedWeekly) { weeklyData = JSON.parse(savedWeekly); counts = weeklyData[activeDay] ? { ...weeklyData[activeDay] } : counts; }
+            const savedWorkout = localStorage.getItem('v14_workout_history');
+            if (savedWorkout) workoutHistory = JSON.parse(savedWorkout);
+            const savedProgress = localStorage.getItem('v14_progress_history');
+            if (savedProgress) progressHistory = JSON.parse(savedProgress);
+        } catch(e) {}
+    }
+
+    function saveData() {
+        try {
+            weeklyData[activeDay] = { ...counts };
+            localStorage.setItem('v14_weekly_data', JSON.stringify(weeklyData));
+        } catch(e) {}
+    }
+
+    function renderList() {
+        const listContainer = document.getElementById('portion-list');
+        listContainer.innerHTML = '';
+        portionsData.forEach(portion => {
+            let step = portion.step || 1;
+            if(portion.id === 'coffee-milk') step = 0.5;
+            const item = document.createElement('div');
+            item.className = 'portion-item';
+            item.innerHTML = `
+                <div class="portion-main">
+                    <div class="portion-icon">${portion.icon}</div>
+                    <div class="portion-info">
+                        <span class="portion-title">${portion.name}</span>
+                        <span class="portion-sub">${portion.details}</span>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn-circle" onclick="changeCount('${portion.id}', -${step})" ${counts[portion.id] === 0 ? 'disabled' : ''}>-</button>
+                    <span class="count">${counts[portion.id] || 0}</span>
+                    <button class="btn-circle" onclick="changeCount('${portion.id}', ${step})">+</button>
+                </div>
+            `;
+            listContainer.appendChild(item);
+        });
+        calculateTotal();
+        renderFoodSummaryColumns();
+    }
+
+    function changeCount(id, delta) {
+        if ((counts[id] || 0) + delta >= 0) {
+            counts[id] = Math.round(((counts[id] || 0) + delta) * 10) / 10;
+            saveData();
+            renderList();
+            renderCleanList();
+            updateAiInsights();
+        }
+    }
+
+    function renderFoodSummaryColumns() {
+        const proteinList = document.getElementById('protein-items-list');
+        const carbList = document.getElementById('carb-items-list');
+        const fatList = document.getElementById('fat-items-list');
+        const freeList = document.getElementById('free-items-list');
+        
+        proteinList.innerHTML = ''; carbList.innerHTML = ''; fatList.innerHTML = ''; freeList.innerHTML = '';
+
+        let totalProtein = 0, totalCarb = 0, totalFat = 0, totalFree = 0;
+        let proteinHtml = '', carbHtml = '', fatHtml = '', freeHtml = '';
+
+        portionsData.forEach(p => {
+            const count = counts[p.id] || 0;
+            if (count > 0) {
+                let displayName = p.name.split('(')[0];
+                let effectivePortions = count;
+                if (p.id === 'carbs-140-pro') effectivePortions = count * 1.5;
+                if (p.id === 'carbs-120-pith99') effectivePortions = count * 1.2;
+
+                const boxHtml = `
+                    <div class="nutrition-item-box sparkle">
+                        <div class="nutrition-item-name">${displayName}</div>
+                        <div class="nutrition-item-amount">${count} יח' (${Math.round(effectivePortions*10)/10} מנות)</div>
+                    </div>
+                `;
+                if (p.group === 'protein' || p.group === 'milk') { totalProtein += effectivePortions; proteinHtml += boxHtml; }
+                else if (p.group === 'carbs' || p.id === 'veg') { totalCarb += effectivePortions; carbHtml += boxHtml; }
+                else if (p.group === 'fat') { totalFat += effectivePortions; fatHtml += boxHtml; }
+                else if (p.group === 'free') { totalFree += effectivePortions; freeHtml += boxHtml; }
+            }
+        });
+
+        proteinList.innerHTML = proteinHtml || '<div style="color:#a3b8a5; font-size:0.65em; text-align:center;">אין</div>';
+        carbList.innerHTML = carbHtml || '<div style="color:#a3b8a5; font-size:0.65em; text-align:center;">אין</div>';
+        fatList.innerHTML = fatHtml || '<div style="color:#a3b8a5; font-size:0.65em; text-align:center;">אין</div>';
+        freeList.innerHTML = freeHtml || '<div style="color:#a3b8a5; font-size:0.65em; text-align:center;">אין</div>';
+
+        document.getElementById('summary-protein-ratio').innerText = `${Math.round(totalProtein*10)/10} מנות`;
+        document.getElementById('summary-carb-ratio').innerText = `${Math.round(totalCarb*10)/10} מנות`;
+        document.getElementById('summary-fat-ratio').innerText = `${Math.round(totalFat*10)/10} מנות`;
+        document.getElementById('summary-free-ratio').innerText = `${Math.round(totalFree*10)/10} מנות`;
+    }
+
+    function calculateTotal() {
+        let totalCalories = 0;
+        let totalProteinGrams = 0;
+        let totalCarbGrams = 0;
+        let totalFatGrams = 0;
+
+        portionsData.forEach(p => { 
+            let count = counts[p.id] || 0;
+            totalCalories += (count * p.calories);
+            totalProteinGrams += (count * (p.proteinGrams || 0));
+            totalCarbGrams += (count * (p.carbGrams || 0));
+            totalFatGrams += (count * (p.fatGrams || 0));
+        });
+
+        document.getElementById('total-calories').innerText = Math.round(totalCalories);
+
+        weeklyData[activeDay] = { ...counts };
+        
+        let sumWeeklyCals = 0;
+        let daysCounted = 0;
+
+        Object.keys(weeklyData).forEach(d => {
+            let dayCals = 0;
+            portionsData.forEach(p => {
+                dayCals += ((weeklyData[d][p.id] || 0) * p.calories);
+            });
+            if (dayCals > 0) {
+                sumWeeklyCals += dayCals;
+                daysCounted++;
+            }
+        });
+
+        let divisor = daysCounted > 0 ? daysCounted : 1;
+        let weeklyAvg = Math.round(sumWeeklyCals / divisor);
+        
+        document.getElementById('weekly-avg-calories-display').innerText = `${weeklyAvg} קלוריות בממוצע ליום (Net Average)`;
+
+        let proteinCalsFromMacros = totalProteinGrams * 4;
+        let carbCalsFromMacros = totalCarbGrams * 4;
+        let fatCalsFromMacros = totalFatGrams * 9;
+        let totalCalsFromMacros = proteinCalsFromMacros + carbCalsFromMacros + fatCalsFromMacros;
+
+        let pPct = 0, cPct = 0, fPct = 0;
+        if (totalCalsFromMacros > 0) {
+            pPct = Math.round((proteinCalsFromMacros / totalCalsFromMacros) * 100);
+            cPct = Math.round((carbCalsFromMacros / totalCalsFromMacros) * 100);
+            fPct = Math.round((fatCalsFromMacros / totalCalsFromMacros) * 100);
+            let sum = pPct + cPct + fPct;
+            if (sum !== 100 && sum > 0) cPct += (100 - sum);
+        }
+
+        document.getElementById('macro-pct-protein').innerText = pPct + '%';
+        document.getElementById('macro-pct-carbs').innerText = cPct + '%';
+        document.getElementById('macro-pct-fat').innerText = fPct + '%';
+
+        document.getElementById('macro-gram-protein').innerText = Math.round(totalProteinGrams) + 'g';
+        document.getElementById('macro-gram-carbs').innerText = Math.round(totalCarbGrams) + 'g';
+        document.getElementById('macro-gram-fat').innerText = Math.round(totalFatGrams) + 'g';
+
+        document.getElementById('macro-bar-protein').style.width = pPct + '%';
+        document.getElementById('macro-bar-carbs').style.width = cPct + '%';
+        document.getElementById('macro-bar-fat').style.width = fPct + '%';
+
+        const maxRangeVal = parseInt(document.getElementById('calorie-range-max').value) || 1700;
+        const minRangeVal = parseInt(document.getElementById('calorie-range-min').value) || 1300;
+        let activeTarget = Math.max(maxRangeVal, minRangeVal);
+
+        updateCaloriesChart(totalCalories, activeTarget);
+        updateAiInsights();
+    }
+
+    function initCaloriesChart() {
+        const ctx = document.getElementById('caloriesChart').getContext('2d');
+        caloriesChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { datasets: [{ data: [0, 100], backgroundColor: ['#4caf50', '#233327'], borderWidth: 0, borderRadius: 12 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '85%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+        });
+    }
+
+    function updateCaloriesChart(consumed, target) {
+        if (!caloriesChart) return;
+        let remaining = Math.max(0, target - consumed);
+        caloriesChart.data.datasets[0].data = [consumed, remaining];
+        document.getElementById('target-calories').innerText = target;
+        caloriesChart.update();
+    }
+
+    function updateGoal() { 
+        const dayType = document.getElementById('day-type').value;
+        document.getElementById('custom-calorie-group').style.display = (dayType === 'custom') ? 'flex' : 'none';
+        saveData(); 
+        calculateTotal(); 
+    }
+
+    function saveCleanTargets() {
+        cleanTargets['חלבון'] = parseFloat(document.getElementById('target-target-protein').value) || 0;
+        cleanTargets['פחמימה'] = parseFloat(document.getElementById('target-target-carbs').value) || 0;
+        cleanTargets['שומן'] = parseFloat(document.getElementById('target-target-fat').value) || 0;
+        cleanTargets['חופשי'] = parseFloat(document.getElementById('target-target-free').value) || 0;
+        cleanTargets['ירקות'] = parseFloat(document.getElementById('target-target-veg').value) || 0;
+        cleanTargets['קפה/חלב'] = parseFloat(document.getElementById('target-target-milk').value) || 0;
+        localStorage.setItem('v14_clean_targets', JSON.stringify(cleanTargets));
+        renderCleanSummary();
+        updateAiInsights();
+    }
+
+    function loadCleanTargets() {
+        try {
+            const saved = localStorage.getItem('v14_clean_targets');
+            if (saved) {
+                cleanTargets = JSON.parse(saved);
+                if(document.getElementById('target-target-protein')) document.getElementById('target-target-protein').value = cleanTargets['חלבון'] ?? 6;
+                if(document.getElementById('target-target-carbs')) document.getElementById('target-target-carbs').value = cleanTargets['פחמימה'] ?? 3;
+                if(document.getElementById('target-target-fat')) document.getElementById('target-target-fat').value = cleanTargets['שומן'] ?? 1;
+                if(document.getElementById('target-target-free')) document.getElementById('target-target-free').value = cleanTargets['חופשי'] ?? 1;
+                if(document.getElementById('target-target-veg')) document.getElementById('target-target-veg').value = cleanTargets['ירקות'] ?? 1;
+                if(document.getElementById('target-target-milk')) document.getElementById('target-target-milk').value = cleanTargets['קפה/חלב'] ?? 1;
+            }
+        } catch(e){}
+    }
+
+    function renderCleanSummary() {
+        const container = document.getElementById('clean-summary-content');
+        if (!container) return;
+        let totalsByGroup = { 'חלבונים': 0, 'פחמימות': 0, 'שומנים': 0, 'חופשי': 0, 'ירקות': 0, 'קפה/חלב': 0 };
+        portionsData.forEach(p => {
+            const count = counts[p.id] || 0;
+            if (count > 0) {
+                let effectiveCount = count;
+                if (p.id === 'carbs-140-pro') effectiveCount = count * 1.5;
+                if (p.id === 'carbs-120-pith99') effectiveCount = count * 1.2;
+                if (p.group === 'protein') totalsByGroup['חלבונים'] += effectiveCount;
+                else if (p.group === 'carbs') {
+                    if (p.id === 'coffee-milk') totalsByGroup['קפה/חלב'] += effectiveCount;
+                    else totalsByGroup['פחמימות'] += effectiveCount;
+                }
+                else if (p.group === 'fat') totalsByGroup['שומנים'] += effectiveCount;
+                else if (p.group === 'free') totalsByGroup['חופשי'] += effectiveCount;
+                else if (p.group === 'veg') totalsByGroup['ירקות'] += effectiveCount;
+            }
+        });
+        let html = '';
+        for (const [group, total] of Object.entries(totalsByGroup)) {
+            let targetKey = group === 'חלבונים' ? 'חלבון' : (group === 'פחמימות' ? 'פחמימה' : (group === 'שומנים' ? 'שומן' : group));
+            let targetVal = cleanTargets[targetKey] || 0;
+            let isReached = targetVal > 0 && total >= targetVal;
+            html += `<div style="background:#1c261e; padding:8px 10px; border-radius:8px; border:1px solid ${isReached ? '#4caf50' : '#2d3f31'}; text-align:center;">
+                <span style="color:#a3b8a5; font-size:0.85em;">${group}:</span><br><b style="color:${isReached ? '#4caf50' : '#81c784'}; font-size:1.05em;">${Math.round(total*10)/10} / ${targetVal} מנות</b>
+            </div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function renderCleanList() {
+        renderCleanSummary();
+        const container = document.getElementById('clean-portion-list');
+        if (!container) return;
+        container.innerHTML = '';
+        portionsData.forEach(portion => {
+            let step = portion.step || 1;
+            if(portion.id === 'coffee-milk') step = 0.5;
+            const item = document.createElement('div');
+            item.className = 'portion-item';
+            item.innerHTML = `
+                <div class="portion-main">
+                    <div class="portion-icon">${portion.icon}</div>
+                    <div class="portion-info">
+                        <span class="portion-title">${portion.cleanName}</span>
+                        <span class="portion-sub">${portion.details}</span>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn-circle" onclick="changeCleanCount('${portion.id}', -${step})" ${counts[portion.id] === 0 ? 'disabled' : ''}>-</button>
+                    <span class="count">${counts[portion.id] || 0}</span>
+                    <button class="btn-circle" onclick="changeCleanCount('${portion.id}', ${step})">+</button>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function changeCleanCount(id, delta) {
+        changeCount(id, delta);
+        renderCleanList();
+    }
+
+    function resetCleanDay() {
+        portionsData.forEach(p => { counts[p.id] = 0; });
+        saveData();
+        renderList();
+        renderCleanList();
+    }
+
+    function updateAiInsights() {
+        const aiInsightText = document.getElementById('ai-insight-text');
+        if (!aiInsightText) return;
+
+        let totalCalories = 0;
+        let totalProtein = 0;
+        let totalCarbs = 0;
+        let totalFat = 0;
+
+        portionsData.forEach(p => {
+            let count = counts[p.id] || 0;
+            let effectiveCount = count;
+            if (p.id === 'carbs-140-pro') effectiveCount = count * 1.5;
+            if (p.id === 'carbs-120-pith99') effectiveCount = count * 1.2;
+
+            totalCalories += (count * p.calories);
+            if (p.group === 'protein' || p.group === 'milk') totalProtein += effectiveCount;
+            if (p.group === 'carbs' || p.id === 'veg') totalCarbs += effectiveCount;
+            if (p.group === 'fat') totalFat += effectiveCount;
+        });
+
+        const maxRangeVal = parseInt(document.getElementById('calorie-range-max').value) || 1700;
+        const minRangeVal = parseInt(document.getElementById('calorie-range-min').value) || 1300;
+        const targetBudget = Math.max(maxRangeVal, minRangeVal);
+
+        const targetProt = cleanTargets['חלבון'] || 6;
+        const targetCarbs = cleanTargets['פחמימה'] || 3;
+        const targetFat = cleanTargets['שומן'] || 1;
+
+        let calorieExceeded = totalCalories > targetBudget;
+        let proteinExceeded = totalProtein > targetProt;
+        let carbsExceeded = totalCarbs > targetCarbs;
+        let fatExceeded = totalFat > targetFat;
+
+        let statusHtml = `• <b>מצב קלורי:</b> ${Math.round(totalCalories)} / ${targetBudget} קל' ${calorieExceeded ? '⚠️ <b>חריגה מהתקציב הקלורי!</b>' : '✅ במסגרת התקציב'}<br>` +
+                         `• <b>חלבון:</b> ${Math.round(totalProtein*10)/10} / ${targetProt} מנות ${proteinExceeded ? '⚠️ <b>חריגה ביעד חלבון!</b>' : (totalProtein >= targetProt ? '✅ הושג' : '⏳ בדרך')}<br>` +
+                         `• <b>פחמימה:</b> ${Math.round(totalCarbs*10)/10} / ${targetCarbs} מנות ${carbsExceeded ? '⚠️ <b>חריגה ביעד פחמימה!</b>' : (totalCarbs >= targetCarbs ? '✅ הושג' : '⏳ בדרך')}<br>` +
+                         `• <b>שומן:</b> ${Math.round(totalFat*10)/10} / ${targetFat} מנות ${fatExceeded ? '⚠️ <b>חריגה ביעד שומן!</b>' : (totalFat >= targetFat ? '✅ הושג' : '⏳ בדרך')}<br>`;
+
+        aiInsightText.innerHTML = statusHtml;
+    }
+
+    function analyzeWeighingAi() {
+        const prevWeight = parseFloat(document.getElementById('prev-weight-input').value);
+        const currWeight = parseFloat(document.getElementById('current-weight-input').value);
+        const outputEl = document.getElementById('weighing-ai-output');
+        if (outputEl) outputEl.style.display = 'block';
+        if (isNaN(prevWeight) || isNaN(currWeight)) {
+            if (outputEl) outputEl.innerHTML = "נא להזין משקל קודם ומשקל נוכחי תקינים.";
+            return;
+        }
+        const diff = Math.round((currWeight - prevWeight) * 10) / 10;
+        const targetDrop = prevWeight * 0.005;
+        let analysisHtml = `🤖 <b>ניתוח שקילה (חיטוב):</b><br>• שינוי במשקל: <b>${diff > 0 ? '+' + diff : diff} ק"ג</b><br>`;
+        
+        if (diff < 0 && Math.abs(diff) >= targetDrop) {
+            analysisHtml += `ירידה של ${Math.abs(diff)} ק"ג במשקל – כל הכבוד! ירידה מעולה שמראה על קצב חיטוב מצוין, תמשיך/י בדיוק ככה! 🎉`;
+        } else if (diff < 0 && Math.abs(diff) < targetDrop) {
+            analysisHtml += `ירידה קלה של ${Math.abs(diff)} ק"ג במשקל. אמנם יש ירידה, אך כדי לעמוד ביעד החיטוב המיטבי (לפחות 0.5% ממשקל הגוף), שימו לב לדגשים הבאים:<br>` +
+                            `1. דיוק קלורי - לשלוח לתזונאית מה שאת/ה אוכל/ת כולל צילום ארוחות כדי להבין איפה החריגות מגיעות (כנראה שפשוט לא עלינו עליהן), האם את/ה שוקל/ת את המזון ונעזר/ת במשקל מטבח, והאם לוקח/ת בחשבון חלב ורטבים?<br>` +
+                            `2. ימים גבוהים שמעלים את הממוצע השבועי כמו שישי שבת / ציט.<br>` +
+                            `3. רמת פעילות יומית וצעדים - לשים לב שמגיעים לפחות ל-6,500-8,000 צעדים ליום.<br>` +
+                            `4. החזקת מסים/מים - הורמונלי / אימונים / שינה וסטרס / יותר פחמימה ומלח בחלק מהימים.<br>` +
+                            `מחכה לשקילה הבאה שלך!`;
+        } else if (diff === 0) {
+            analysisHtml += `המשקל יציב ללא שינוי. מה עושים אם אין ירידה?<br>` +
+                            `1. דיוק קלורי - לשלוח לתזונאית מה שאת/ה אוכל/ת כולל צילום ארוחות כדי להבין איפה החריגות מגיעות (כנראה שפשוט לא עלינו עליהן), האם את/ה שוקל/ת את המזון ונעזר/ת במשקל מטבח, והאם לוקח/ת בחשבון חלב ורטבים?<br>` +
+                            `2. ימים גבוהים שמעלים את הממוצע השבועי כמו שישי שבת / ציט.<br>` +
+                            `3. רמת פעילות יומית וצעדים - לשים לב שמגיעים לפחות ל-6,500-8,000 צעדים ליום.<br>` +
+                            `4. החזקת מסים/מים - הורמונלי / אימונים / שינה וסטרס / יותר פחמימה ומלח בחלק מהימים.<br>` +
+                            `מחכה לשקילה הבאה שלך!`;
+        } else {
+            analysisHtml += `יש עליה קלה במשקל (${diff}+ ק"ג) - את/ה לא אמור/ה לעלות על הקלוריות האלה, ננסה להבין ביחד:<br>` +
+                            `1. דיוק קלורי - לשלוח לתזונאית מה שאת/ה אוכל/ת כולל צילום ארוחות כדי להבין איפה החריגות מגיעות (כנראה שפשוט לא עלינו עליהן), האם את/ה שוקל/ת את המזון ונעזר/ת במשקל מטבח, והאם לוקח/ת בחשבון חלב ורטבים?<br>` +
+                            `2. ימים גבוהים שמעלים את הממוצע השבועי כמו שישי שבת / ציט.<br>` +
+                            `3. רמת פעילות יומית וצעדים - לשים לב שמגיעים לפחות ל-6,500-8,000 צעדים ליום.<br>` +
+                            `4. החזקת מסים/מים - הורמונלי / אימונים / שינה וסטרס / יותר פחמימה ומלח בחלק מהימים.<br>` +
+                            `מחכה לשקילה הבאה שלך!`;
+        }
+        if (outputEl) outputEl.innerHTML = analysisHtml;
+    }
+
+    function toggleBodyFatField() {
+        const formula = document.getElementById('calc-net-formula').value;
+        const fatGroup = document.getElementById('body-fat-group');
+        fatGroup.style.display = (formula === 'katch') ? 'flex' : 'none';
+    }
+
+    function calculateCalculatorNetTdee() {
+        const age = parseFloat(document.getElementById('calc-net-age').value) || 34;
+        const gender = document.getElementById('calc-net-gender').value;
+        const weight = parseFloat(document.getElementById('calc-net-weight').value) || 61;
+        const height = parseFloat(document.getElementById('calc-net-height').value) || 169;
+        const bodyFat = parseFloat(document.getElementById('calc-net-fat').value) || 25;
+        const activity = parseFloat(document.getElementById('calc-net-activity').value) || 1.465;
+        const formula = document.getElementById('calc-net-formula').value;
+
+        let bmr = 0;
+        if (formula === 'mifflin') bmr = (10 * weight) + (6.25 * height) - (5 * age) + (gender === 'm' ? 5 : -161);
+        else if (formula === 'katch') bmr = 370 + (21.6 * (weight * (1 - (bodyFat / 100))));
+        else bmr = gender === 'm' ? (88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)) : (447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age));
+
+        const tdee = Math.round(bmr * activity);
+        const resultsCard = document.getElementById('calc-net-results-card');
+        resultsCard.style.display = 'block';
+        document.getElementById('calc-net-results-content').innerHTML = `
+            • <b>BMR:</b> ${Math.round(bmr)} Calories/day<br>
+            • <b>TDEE:</b> <span style="color:#4caf50; font-size:1.2em;"><b>${tdee} Calories/day</b></span><br>
+        `;
+    }
+
+    function calculateMainAiRecommendation() {
+        const gender = document.getElementById('main-gender') ? document.getElementById('main-gender').value : 'f';
+        const age = parseFloat(document.getElementById('main-age').value) || 34;
+        const height = parseFloat(document.getElementById('main-height').value) || 169;
+        const weight = parseFloat(document.getElementById('main-weight').value) || 61.1;
+        const activity = parseFloat(document.getElementById('main-activity').value) || 1.55;
+
+        let bmr = (10 * weight) + (6.25 * height) - (5 * age) + (gender === 'm' ? 5 : -161);
+        let tdee = Math.round(bmr * activity);
+        let baseDeficit = tdee - 300;
+
+        document.getElementById('goal-low').value = baseDeficit - 150;
+        document.getElementById('goal-high').value = baseDeficit + 250;
+        const box = document.getElementById('main-ai-rec-box');
+        if (box) box.innerHTML = `💡 TDEE: <b>${tdee} קל'</b> | יעד חיטוב: <b>${baseDeficit} קל'</b>`;
+        updateGoal();
+    }
+
+    function addWorkoutLog() {
+        const type = document.getElementById('workout-type-log').value;
+        const day = document.getElementById('workout-day-log').value;
+        const exercises = document.getElementById('workout-exercises-log').value;
+        if (!exercises.trim()) { alert('נא להזין פירוט תרגילים'); return; }
+        workoutHistory.unshift({ date: new Date().toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' }), day, type: type === 'strength' ? 'אימון כוח' : 'אימון אירובי', exercises });
+        document.getElementById('workout-exercises-log').value = '';
+        localStorage.setItem('v14_workout_history', JSON.stringify(workoutHistory));
+        renderWorkoutHistory();
+    }
+
+    function renderWorkoutHistory() {
+        const container = document.getElementById('workout-history-list');
+        if (!container) return;
+        container.innerHTML = workoutHistory.length === 0 ? '<div style="text-align:center; color:#a3b8a5; font-size:0.9em; padding:20px;">טרם תועדו אימונים</div>' : '';
+        workoutHistory.forEach((item, index) => {
+            container.innerHTML += `<div class="history-item"><div><strong>${item.day} (${item.date}) - ${item.type}</strong><br><span style="color:#c8e6c9;">${item.exercises}</span></div><button style="background:none; border:none; color:#81c784; cursor:pointer;" onclick="workoutHistory.splice(${index},1);localStorage.setItem('v14_workout_history',JSON.stringify(workoutHistory));renderWorkoutHistory();">✕</button></div>`;
+        });
+    }
+
+    function saveAndRunAiAnalysis() {
+        const genderField = document.getElementById('ai-gender');
+        const ageField = document.getElementById('ai-age');
+        const heightField = document.getElementById('ai-height');
+        const weightField = document.getElementById('ai-weight');
+        const activityField = document.getElementById('ai-activity');
+        const waistField = document.getElementById('input-waist');
+        const hungerField = document.getElementById('ai-hunger');
+
+        const gender = genderField ? genderField.value : 'f';
+        const age = ageField ? parseFloat(ageField.value) || 34 : 34;
+        const height = heightField ? parseFloat(heightField.value) || 169 : 169;
+        const weight = weightField ? parseFloat(weightField.value) || 61.1 : 61.1;
+        const activity = activityField ? parseFloat(activityField.value) || 1.55 : 1.55;
+        const waist = waistField ? parseFloat(waistField.value) : NaN;
+        const hunger = hungerField ? hungerField.value : 'normal';
+
+        if (!isNaN(weight) || !isNaN(waist)) {
+            progressHistory.unshift({ date: new Date().toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' }), weight: !isNaN(weight) ? weight : null, waist: !isNaN(waist) ? waist : null });
+            localStorage.setItem('v14_progress_history', JSON.stringify(progressHistory));
+            renderProgressHistory();
+            initProgressCharts();
+        }
+
+        let bmr = (10 * weight) + (6.25 * height) - (5 * age) + (gender === 'm' ? 5 : -161);
+        let tdee = Math.round(bmr * activity);
+        let targetCalories = tdee - 300;
+        if (hunger === 'high') targetCalories += 100;
+
+        const recContainer = document.getElementById('ai-custom-diet-recommendation');
+        if (recContainer) {
+            recContainer.innerHTML = `TDEE: ${tdee} קל' | יעד קלוריות לחיטוב: <b>${targetCalories} קלוריות</b>`;
+        }
+        updateAiInsights();
+    }
+
+    function renderProgressHistory() {
+        const container = document.getElementById('progress-history-list');
+        if (!container) return;
+        container.innerHTML = '';
+        progressHistory.forEach((item, index) => {
+            container.innerHTML += `<div class="history-item"><div><strong>תאריך: ${item.date}</strong><br>${item.weight ? `משקל: <b>${item.weight} ק"ג</b>` : ''}</div><button style="background:none; border:none; color:#81c784; cursor:pointer;" onclick="progressHistory.splice(${index},1);localStorage.setItem('v14_progress_history',JSON.stringify(progressHistory));renderProgressHistory();initProgressCharts();updateAiInsights();">✕</button></div>`;
+        });
+    }
+
+    function initProgressCharts() {
+        const weightCanvas = document.getElementById('weightGraphCanvas');
+        const waistCanvas = document.getElementById('waistGraphCanvas');
+        if (!weightCanvas || !waistCanvas) return;
+
+        const ctxWeight = weightCanvas.getContext('2d');
+        const labels = progressHistory.slice().reverse().map(i => i.date);
+        const weights = progressHistory.slice().reverse().map(i => i.weight);
+        if (weightChartInstance) weightChartInstance.destroy();
+        weightChartInstance = new Chart(ctxWeight, { type: 'line', data: { labels: labels.length ? labels : ['התחלה'], datasets: [{ data: weights.length ? weights : [61.1], borderColor: '#4caf50', backgroundColor: 'rgba(76, 175, 80, 0.1)', fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        
+        const ctxWaist = waistCanvas.getContext('2d');
+        const waists = progressHistory.slice().reverse().map(i => i.waist);
+        if (waistChartInstance) waistChartInstance.destroy();
+        waistChartInstance = new Chart(ctxWaist, { type: 'line', data: { labels: labels.length ? labels : ['התחלה'], datasets: [{ data: waists.length ? waists : [0], borderColor: '#81c784', backgroundColor: 'rgba(129, 199, 132, 0.1)', fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+    }
+
+    window.onload = function() {
+        loadSavedData();
+        loadCleanTargets();
+        initCaloriesChart();
+        updateDateDisplay();
+        renderList();
+        renderCleanList();
+        renderWorkoutHistory();
+        initProgressCharts();
+        renderProgressHistory();
+        calculateMainAiRecommendation();
+        toggleBodyFatField();
+        applyMacroPreset();
+        updateAiInsights();
+    };
+</script>
+</body>
+</html>
